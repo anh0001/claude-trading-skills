@@ -152,17 +152,17 @@ jobs:
           --cov-report=term-missing
           --cov-append
 
-      - name: Test skill-idea-miner
-        run: >
-          python -m pytest skills/skill-idea-miner/scripts/tests/ -v
-          --cov=skills/skill-idea-miner/scripts
-          --cov-report=term-missing
-          --cov-append
-
       - name: Test skill-designer
         run: >
           python -m pytest skills/skill-designer/scripts/tests/ -v
           --cov=skills/skill-designer/scripts
+          --cov-report=term-missing
+          --cov-append
+
+      - name: Test skill-idea-miner
+        run: >
+          python -m pytest skills/skill-idea-miner/scripts/tests/ -v
+          --cov=skills/skill-idea-miner/scripts
           --cov-report=term-missing
           --cov-append
 

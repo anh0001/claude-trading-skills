@@ -115,19 +115,12 @@ def main() -> int:
 
     idea = json.loads(idea_path.read_text(encoding="utf-8"))
 
-    # Load references
+    # Load references — all 3 are required (no silent degrade on partial miss)
     refs = load_references(REFERENCES_DIR)
-    if not refs:
-        print(
-            f"Error: no reference files found in {REFERENCES_DIR}. All 3 required.",
-            file=sys.stderr,
-        )
-        return 1
-
     missing = [f for f in REFERENCE_FILES if f not in refs]
-    if len(missing) == len(REFERENCE_FILES):
+    if missing:
         print(
-            f"Error: all reference files missing: {missing}",
+            f"Error: reference files missing: {missing}. All 3 are required.",
             file=sys.stderr,
         )
         return 1

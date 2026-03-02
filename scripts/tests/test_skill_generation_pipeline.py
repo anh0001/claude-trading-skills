@@ -814,7 +814,9 @@ def test_daily_flow_existing_pr(pipeline_module, tmp_path: Path):
             return CompletedProcess(cmd, 0, "", "")
         # gh pr list returns match
         if "gh" in cmd_str and "pr" in cmd_str and "list" in cmd_str:
-            return CompletedProcess(cmd, 0, '[{"number": 42}]', "")
+            return CompletedProcess(
+                cmd, 0, '[{"number": 42, "url": "https://github.com/test/repo/pull/42"}]', ""
+            )
 
         return CompletedProcess(cmd, 0, "", "")
 
@@ -970,7 +972,9 @@ def test_daily_flow_existing_pr_sets_pr_open(pipeline_module, tmp_path: Path):
         if "pull" in cmd_str:
             return CompletedProcess(cmd, 0, "", "")
         if "gh" in cmd_str and "pr" in cmd_str and "list" in cmd_str:
-            return CompletedProcess(cmd, 0, '[{"number": 99}]', "")
+            return CompletedProcess(
+                cmd, 0, '[{"number": 99, "url": "https://github.com/test/repo/pull/99"}]', ""
+            )
         return CompletedProcess(cmd, 0, "", "")
 
     with (
@@ -981,10 +985,11 @@ def test_daily_flow_existing_pr_sets_pr_open(pipeline_module, tmp_path: Path):
 
     assert rc == 0
 
-    # Backlog should be pr_open
+    # Backlog should be pr_open with URL
     backlog = pipeline_module.load_backlog(tmp_path)
     idea = backlog["ideas"][0]
     assert idea["status"] == "pr_open"
+    assert idea["pr_url"] == "https://github.com/test/repo/pull/99"
 
 
 # -- Daily flow: unexpected changes preserves branch --

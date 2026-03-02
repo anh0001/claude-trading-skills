@@ -49,7 +49,7 @@ MAX_DESIGN_ITERATIONS = 2  # initial review + 1 improvement pass
 MAX_RETRIES = 1  # retry count for design_failed/pr_failed
 CLAUDE_BUDGET_DESIGN = 3.00
 CLAUDE_BUDGET_REVISE = 2.00
-DESIGN_TIMEOUT = 600
+DESIGN_TIMEOUT = 1200
 
 
 # -- Lock --
@@ -350,24 +350,29 @@ def git_safe_check(project_root: Path) -> bool:
 # -- PR checks --
 
 
-def check_existing_pr(project_root: Path, branch_name: str) -> bool:
-    """Check if an open PR already exists for this branch."""
+def check_existing_pr(project_root: Path, branch_name: str) -> str | None:
+    """Check if an open PR already exists for this branch.
+
+    Returns the PR URL if found, None otherwise.
+    """
     if not shutil.which("gh"):
-        return False
+        return None
     result = subprocess.run(
-        ["gh", "pr", "list", "--head", branch_name, "--state", "open", "--json", "number"],
+        ["gh", "pr", "list", "--head", branch_name, "--state", "open", "--json", "number,url"],
         cwd=project_root,
         capture_output=True,
         text=True,
         check=False,
     )
     if result.returncode != 0:
-        return False
+        return None
     try:
         prs = json.loads(result.stdout)
-        return len(prs) > 0
+        if prs:
+            return prs[0].get("url", "")
+        return None
     except json.JSONDecodeError:
-        return False
+        return None
 
 
 # -- Branch cleanup --
@@ -728,6 +733,8 @@ def design_skill(project_root: Path, idea: dict, skill_name: str, dry_run: bool 
             return False
 
         # Invoke claude -p with the design prompt
+        # Remove CLAUDECODE env var to allow claude -p from within Claude Code terminals
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
         result = subprocess.run(
             [
                 "claude",
@@ -742,6 +749,7 @@ def design_skill(project_root: Path, idea: dict, skill_name: str, dry_run: bool 
             text=True,
             check=False,
             timeout=DESIGN_TIMEOUT,
+            env=env,
         )
         if result.returncode != 0:
             logger.error("claude -p design failed: %s", result.stderr.strip()[:300])
@@ -781,6 +789,8 @@ def improve_skill(project_root: Path, skill_name: str, findings: list[str]) -> b
     )
 
     try:
+        # Remove CLAUDECODE env var to allow claude -p from within Claude Code terminals
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
         result = subprocess.run(
             [
                 "claude",
@@ -795,6 +805,7 @@ def improve_skill(project_root: Path, skill_name: str, findings: list[str]) -> b
             text=True,
             check=False,
             timeout=DESIGN_TIMEOUT,
+            env=env,
         )
         if result.returncode != 0:
             logger.error("claude -p improve failed: %s", result.stderr.strip()[:300])
@@ -934,6 +945,9 @@ def create_skill_pr(
     branch_name: str,
 ) -> str | None:
     """Lint, commit, push, and create a PR. Returns PR URL or None."""
+    if not shutil.which("gh"):
+        logger.error("gh CLI not found; cannot create PR.")
+        return None
     # Auto-fix lint issues
     if shutil.which("ruff"):
         subprocess.run(
@@ -1103,6 +1117,45 @@ def write_daily_generation_summary(
         summary_path.write_text(header + entry, encoding="utf-8")
 
 
+def _record_daily_state(
+    project_root: Path,
+    idea: dict | None,
+    skill_name: str | None,
+    idea_id: str | None,
+    score: int,
+    pr_url: str | None,
+    outcome: str,
+    dry_run: bool = False,
+) -> None:
+    """Record state and summary for any daily flow exit path (success or failure)."""
+    try:
+        write_daily_generation_summary(
+            project_root, idea, skill_name or "unknown", None, pr_url, dry_run=dry_run
+        )
+    except Exception:
+        logger.warning("Failed to write daily summary.", exc_info=True)
+
+    try:
+        state = load_state(project_root)
+        state["last_run"] = datetime.now().isoformat()
+        state["history"].append(
+            {
+                "mode": "daily",
+                "idea": idea.get("title") if idea else None,
+                "idea_id": idea_id,
+                "skill": skill_name,
+                "score": score,
+                "pr_url": pr_url,
+                "outcome": outcome,
+                "dry_run": dry_run,
+                "timestamp": datetime.now().isoformat(),
+            }
+        )
+        save_state(project_root, state)
+    except Exception:
+        logger.warning("Failed to save daily state.", exc_info=True)
+
+
 # -- Daily flow: main orchestrator --
 
 
@@ -1183,14 +1236,21 @@ def run_daily(project_root: Path, dry_run: bool = False) -> int:
 
         # Non-dry-run: full flow
         if not git_safe_check(project_root):
+            _record_daily_state(
+                project_root, idea, skill_name, idea_id, 0, None, "git_check_failed"
+            )
             return 1
 
         branch_name = f"skill-generation/{idea_id}-{skill_name}"
 
         # Fix V3#1: existing PR -> mark as pr_open
-        if check_existing_pr(project_root, branch_name):
-            logger.info("Open PR already exists for %s.", branch_name)
-            update_backlog_status(project_root, idea_id, "pr_open")
+        existing_pr_url = check_existing_pr(project_root, branch_name)
+        if existing_pr_url is not None:
+            logger.info("Open PR already exists for %s: %s", branch_name, existing_pr_url)
+            update_backlog_status(project_root, idea_id, "pr_open", pr_url=existing_pr_url)
+            _record_daily_state(
+                project_root, idea, skill_name, idea_id, 0, existing_pr_url, "pr_already_open"
+            )
             return 0
 
         # Fix #3: delete stale local branch if present
@@ -1211,6 +1271,9 @@ def run_daily(project_root: Path, dry_run: bool = False) -> int:
         )
         if result.returncode != 0:
             logger.error("git checkout -b failed: %s", result.stderr.strip()[:200])
+            _record_daily_state(
+                project_root, idea, skill_name, idea_id, 0, None, "branch_create_failed"
+            )
             return 1
 
         created_branch = True
@@ -1220,6 +1283,7 @@ def run_daily(project_root: Path, dry_run: bool = False) -> int:
             _rollback_skill(project_root, skill_name, branch_name)
             created_branch = False
             update_backlog_status(project_root, idea_id, "design_failed")
+            _record_daily_state(project_root, idea, skill_name, idea_id, 0, None, "design_failed")
             return 1
 
         # Step 11: Check for unexpected changes
@@ -1232,6 +1296,9 @@ def run_daily(project_root: Path, dry_run: bool = False) -> int:
                 branch_name,
             )
             update_backlog_status(project_root, idea_id, "unexpected_changes")
+            _record_daily_state(
+                project_root, idea, skill_name, idea_id, 0, None, "unexpected_changes"
+            )
             return 1
 
         # Step 12: Review and improve
@@ -1240,6 +1307,7 @@ def run_daily(project_root: Path, dry_run: bool = False) -> int:
             _rollback_skill(project_root, skill_name, branch_name)
             created_branch = False
             update_backlog_status(project_root, idea_id, "review_failed")
+            _record_daily_state(project_root, idea, skill_name, idea_id, 0, None, "review_failed")
             return 1
 
         # Step 13: Check for unexpected changes after improvement
@@ -1249,6 +1317,9 @@ def run_daily(project_root: Path, dry_run: bool = False) -> int:
                 branch_name,
             )
             update_backlog_status(project_root, idea_id, "unexpected_changes")
+            _record_daily_state(
+                project_root, idea, skill_name, idea_id, 0, None, "unexpected_changes_post_improve"
+            )
             return 1
 
         # Step 14: Create PR
@@ -1257,6 +1328,7 @@ def run_daily(project_root: Path, dry_run: bool = False) -> int:
             _rollback_skill(project_root, skill_name, branch_name)
             created_branch = False
             update_backlog_status(project_root, idea_id, "pr_failed")
+            _record_daily_state(project_root, idea, skill_name, idea_id, 0, None, "pr_failed")
             return 1
 
         # Step 15: Mark as completed
