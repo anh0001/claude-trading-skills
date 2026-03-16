@@ -873,11 +873,134 @@ def test_open_position_backfill_event_date(tmp_path: Path):
     tid, _ = _register_and_get(tmp_path)
     thesis_store.transition(tmp_path, tid, "ENTRY_READY", "ok")
 
-    backfill_date = "2026-01-15T10:00:00+00:00"
+    # Use a future date that is after the IDEA/ENTRY_READY timestamps
+    backfill_date = "2027-06-15T10:00:00+00:00"
     thesis = thesis_store.open_position(
-        tmp_path, tid, 150.0, "2026-01-15T10:00:00+00:00", event_date=backfill_date
+        tmp_path, tid, 150.0, "2027-06-15T10:00:00+00:00", event_date=backfill_date
     )
 
     active_entry = thesis["status_history"][-1]
     assert active_entry["status"] == "ACTIVE"
     assert active_entry["at"] == backfill_date
+
+
+# -- Tests: Blocker #1 — Cross-timezone date comparison -----------------------
+
+
+def test_cross_timezone_exit_after_entry_succeeds(tmp_path: Path):
+    """exit in UTC is AFTER entry in JST (real time) — should succeed."""
+    tid, _ = _register_and_get(tmp_path)
+    thesis_store.transition(tmp_path, tid, "ENTRY_READY", "ok")
+    # entry: 2026-03-01 00:30 JST = 2026-02-28 15:30 UTC
+    thesis_store.open_position(tmp_path, tid, 100.0, "2026-03-01T00:30:00+09:00")
+    # exit: 2026-02-28 23:00 UTC — this is AFTER entry in real time
+    thesis = thesis_store.close(tmp_path, tid, "target_hit", 110.0, "2026-02-28T23:00:00+00:00")
+    assert thesis["status"] == "CLOSED"
+    assert thesis["outcome"]["holding_days"] == 0
+
+
+def test_cross_timezone_exit_before_entry_fails(tmp_path: Path):
+    """exit in UTC is BEFORE entry in JST (real time) — should fail."""
+    tid, _ = _register_and_get(tmp_path)
+    thesis_store.transition(tmp_path, tid, "ENTRY_READY", "ok")
+    # entry: 2026-03-01 00:30 JST = 2026-02-28 15:30 UTC
+    thesis_store.open_position(tmp_path, tid, 100.0, "2026-03-01T00:30:00+09:00")
+    # exit: 2026-02-28 10:00 UTC — this is BEFORE entry in real time
+    with pytest.raises(ValueError, match="exit.actual_date must be >= entry.actual_date"):
+        thesis_store.close(tmp_path, tid, "stop_hit", 95.0, "2026-02-28T10:00:00+00:00")
+
+
+# -- Tests: Blocker #2 — Protected identity fields in update() ---------------
+
+
+def test_update_ticker_rejected(tmp_path: Path):
+    """update() must reject ticker changes."""
+    tid, _ = _register_and_get(tmp_path)
+    with pytest.raises(ValueError, match="Cannot update protected field: ticker"):
+        thesis_store.update(tmp_path, tid, {"ticker": "MSFT"})
+
+
+def test_update_thesis_type_rejected(tmp_path: Path):
+    """update() must reject thesis_type changes."""
+    tid, _ = _register_and_get(tmp_path)
+    with pytest.raises(ValueError, match="Cannot update protected field: thesis_type"):
+        thesis_store.update(tmp_path, tid, {"thesis_type": "pivot_breakout"})
+
+
+def test_update_origin_fingerprint_rejected(tmp_path: Path):
+    """update() must reject origin_fingerprint changes."""
+    tid, _ = _register_and_get(tmp_path)
+    with pytest.raises(ValueError, match="Cannot update protected field: origin_fingerprint"):
+        thesis_store.update(tmp_path, tid, {"origin_fingerprint": "hack"})
+
+
+# -- Tests: Blocker #3 — validate_state full index comparison -----------------
+
+
+def test_validate_state_detects_review_date_drift(tmp_path: Path):
+    """validate_state() must detect next_review_date drift in index."""
+    tid, _ = _register_and_get(tmp_path)
+
+    # Tamper with _index.json next_review_date
+    index_path = tmp_path / "_index.json"
+    with open(index_path) as f:
+        index = json.load(f)
+    index["theses"][tid]["next_review_date"] = "2099-01-01"
+    with open(index_path, "w") as f:
+        json.dump(index, f)
+
+    result = thesis_store.validate_state(tmp_path)
+    assert not result["ok"]
+    mismatches = [m for m in result["field_mismatches"] if m["field"] == "next_review_date"]
+    assert len(mismatches) == 1
+    assert mismatches[0]["index_value"] == "2099-01-01"
+
+
+# -- Tests: Medium #4 — status_history monotonic ordering ---------------------
+
+
+def test_event_date_before_previous_history_fails(tmp_path: Path):
+    """open_position with event_date before IDEA.at should fail validation."""
+    tid, _ = _register_and_get(tmp_path)
+    thesis_store.transition(tmp_path, tid, "ENTRY_READY", "ok")
+
+    # IDEA.at and ENTRY_READY.at are recent (2026-03-16ish)
+    # Try to open_position with event_date far in the past
+    with pytest.raises(ValueError, match="status_history.*is before"):
+        thesis_store.open_position(
+            tmp_path,
+            tid,
+            150.0,
+            "2020-01-01T10:00:00+00:00",
+            event_date="2020-01-01T10:00:00+00:00",
+        )
+
+
+# -- Tests: Strict date format validation -------------------------------------
+
+
+def test_update_non_padded_date_rejected(tmp_path: Path):
+    """update() must reject non-zero-padded dates like '2026-1-1'."""
+    tid, _ = _register_and_get(tmp_path)
+    with pytest.raises(ValueError, match="not a 'date'|date must be YYYY-MM-DD"):
+        thesis_store.update(tmp_path, tid, {"monitoring": {"next_review_date": "2026-1-1"}})
+
+
+def test_link_report_non_padded_date_rejected(tmp_path: Path):
+    """link_report() must reject non-zero-padded dates."""
+    tid, _ = _register_and_get(tmp_path)
+    with pytest.raises(ValueError, match="not a 'date'|date must be YYYY-MM-DD"):
+        thesis_store.link_report(tmp_path, tid, "test-skill", "report.md", "2026-1-1")
+
+
+def test_list_review_due_uses_parsed_date(tmp_path: Path):
+    """list_review_due() should use parsed date comparison, not string."""
+    tid, _ = _register_and_get(tmp_path)
+
+    # Verify the thesis shows up as due when as_of is far in the future
+    results = thesis_store.list_review_due(tmp_path, "2099-12-31")
+    assert any(r["thesis_id"] == tid for r in results)
+
+    # Verify the thesis does NOT show up when as_of is far in the past
+    results = thesis_store.list_review_due(tmp_path, "2000-01-01")
+    assert not any(r["thesis_id"] == tid for r in results)

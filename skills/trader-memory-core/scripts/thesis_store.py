@@ -10,9 +10,10 @@ import hashlib
 import json
 import logging
 import os
+import re
 import tempfile
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import yaml
@@ -24,6 +25,12 @@ logger = logging.getLogger(__name__)
 
 _STATUS_ORDER = ["IDEA", "ENTRY_READY", "ACTIVE", "CLOSED", "INVALIDATED"]
 _TERMINAL_STATUSES = {"CLOSED", "INVALIDATED"}
+
+
+def _parse_dt(value: str) -> datetime:
+    """Parse an ISO 8601 / RFC 3339 string into an aware datetime."""
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
 
 _TYPE_ABBR = {
     "dividend_income": "div",
@@ -63,12 +70,17 @@ def _check_datetime(value):
     return True
 
 
+_DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+
 @_FORMAT_CHECKER.checks("date", raises=ValueError)
 def _check_date(value):
-    """Validate YYYY-MM-DD date strings."""
+    """Validate YYYY-MM-DD date strings with strict zero-padding."""
     if not isinstance(value, str):
         return True  # null handled by type validation, not format
-    datetime.strptime(value, "%Y-%m-%d")
+    if not _DATE_RE.match(value):
+        raise ValueError(f"date must be YYYY-MM-DD (zero-padded): {value}")
+    date.fromisoformat(value)
     return True
 
 
@@ -111,7 +123,7 @@ def _validate_thesis(thesis: dict) -> None:
             raise ValueError(f"Invalid exit_reason: {exit_reason}")
         entry_date = thesis.get("entry", {}).get("actual_date")
         exit_date = exit_data.get("actual_date")
-        if entry_date and exit_date and exit_date < entry_date:
+        if entry_date and exit_date and _parse_dt(exit_date) < _parse_dt(entry_date):
             raise ValueError("exit.actual_date must be >= entry.actual_date")
 
     if status == "INVALIDATED":
@@ -123,8 +135,24 @@ def _validate_thesis(thesis: dict) -> None:
             )
         entry_date = thesis.get("entry", {}).get("actual_date")
         exit_date = exit_data.get("actual_date")
-        if entry_date and exit_date and exit_date < entry_date:
+        if entry_date and exit_date and _parse_dt(exit_date) < _parse_dt(entry_date):
             raise ValueError("exit.actual_date must be >= entry.actual_date")
+
+    # -- status_history monotonic check --
+    history = thesis.get("status_history", [])
+    for i in range(1, len(history)):
+        prev_at = history[i - 1].get("at", "")
+        curr_at = history[i].get("at", "")
+        if prev_at and curr_at and _parse_dt(curr_at) < _parse_dt(prev_at):
+            raise ValueError(
+                f"status_history[{i}].at ({curr_at}) is before "
+                f"status_history[{i - 1}].at ({prev_at})"
+            )
+    if history and history[-1]["status"] != thesis["status"]:
+        raise ValueError(
+            f"status_history[-1].status ({history[-1]['status']}) "
+            f"!= thesis.status ({thesis['status']})"
+        )
 
 
 def _now_iso() -> str:
@@ -308,12 +336,12 @@ def _default_thesis() -> dict:
     }
 
 
-def _update_index_entry(index: dict, thesis: dict) -> None:
-    """Update the index entry for a thesis."""
-    tid = thesis["thesis_id"]
+def _project_index_fields(thesis: dict) -> dict:
+    """Project thesis fields into the lightweight index representation."""
     created_date = thesis["created_at"][:10] if thesis["created_at"] else None
-    updated_date = thesis["updated_at"][:10] if thesis["updated_at"] else None
-    index["theses"][tid] = {
+    updated_at = thesis.get("updated_at") or thesis["created_at"]
+    updated_date = updated_at[:10] if updated_at else None
+    return {
         "ticker": thesis["ticker"],
         "status": thesis["status"],
         "thesis_type": thesis["thesis_type"],
@@ -323,6 +351,12 @@ def _update_index_entry(index: dict, thesis: dict) -> None:
         "review_status": thesis.get("monitoring", {}).get("review_status", "OK"),
         "origin_fingerprint": thesis.get("origin_fingerprint"),
     }
+
+
+def _update_index_entry(index: dict, thesis: dict) -> None:
+    """Update the index entry for a thesis."""
+    tid = thesis["thesis_id"]
+    index["theses"][tid] = _project_index_fields(thesis)
 
 
 # -- Public API ---------------------------------------------------------------
@@ -515,10 +549,21 @@ def update(state_dir: Path, thesis_id: str, fields: dict) -> dict:
     now = _now_iso()
 
     # Deep merge nested dicts
+    _protected = frozenset(
+        {
+            "thesis_id",
+            "created_at",
+            "status",
+            "status_history",
+            "ticker",
+            "thesis_type",
+            "origin_fingerprint",
+        }
+    )
     _nested_keys = {"entry", "exit", "monitoring", "market_context", "origin", "outcome"}
     for key, value in fields.items():
-        if key in ("thesis_id", "created_at", "status", "status_history"):
-            continue  # protected fields
+        if key in _protected:
+            raise ValueError(f"Cannot update protected field: {key}")
         if key in _nested_keys and isinstance(value, dict) and isinstance(thesis.get(key), dict):
             thesis[key].update(value)
         else:
@@ -737,9 +782,7 @@ def close(
     holding_days = None
     if entry_date:
         try:
-            entry_dt = datetime.fromisoformat(entry_date)
-            exit_dt = datetime.fromisoformat(actual_date)
-            holding_days = (exit_dt - entry_dt).days
+            holding_days = (_parse_dt(actual_date) - _parse_dt(entry_date)).days
         except (ValueError, TypeError):
             pass
 
@@ -886,9 +929,7 @@ def terminate(
         entry_date = thesis["entry"].get("actual_date")
         if entry_date and actual_date:
             try:
-                holding_days = (
-                    datetime.fromisoformat(actual_date) - datetime.fromisoformat(entry_date)
-                ).days
+                holding_days = (_parse_dt(actual_date) - _parse_dt(entry_date)).days
                 thesis["outcome"]["holding_days"] = holding_days
             except (ValueError, TypeError):
                 pass
@@ -980,14 +1021,19 @@ def list_review_due(state_dir: Path, as_of: str) -> list[dict]:
     Returns:
         List of index entries for theses due for review.
     """
+    as_of_date = date.fromisoformat(as_of)
     index = _load_index(state_dir)
     results = []
     for tid, entry in index.get("theses", {}).items():
         if entry.get("status") in _TERMINAL_STATUSES:
             continue
         nrd = entry.get("next_review_date")
-        if nrd and nrd <= as_of:
-            results.append({"thesis_id": tid, **entry})
+        if nrd:
+            try:
+                if date.fromisoformat(nrd) <= as_of_date:
+                    results.append({"thesis_id": tid, **entry})
+            except ValueError:
+                logger.warning("Skipping unparsable next_review_date for %s: %s", tid, nrd)
     return results
 
 
@@ -1052,13 +1098,14 @@ def validate_state(state_dir: Path) -> dict:
             continue
 
         idx_entry = index["theses"][tid]
-        for field in ("ticker", "status", "thesis_type"):
-            if thesis.get(field) != idx_entry.get(field):
+        expected = _project_index_fields(thesis)
+        for field, exp_val in expected.items():
+            if idx_entry.get(field) != exp_val:
                 field_mismatches.append(
                     {
                         "thesis_id": tid,
                         "field": field,
-                        "file_value": thesis.get(field),
+                        "file_value": exp_val,
                         "index_value": idx_entry.get(field),
                     }
                 )

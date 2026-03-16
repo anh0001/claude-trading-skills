@@ -21,7 +21,7 @@ Phase 1 supports single-ticker theses: dividend_income, growth_momentum, mean_re
 
 ## Prerequisites
 
-- Python 3.9+
+- Python 3.10+
 - `pyyaml` (already in project dependencies)
 - FMP API key (optional, only for MAE/MFE calculation in postmortem)
 
