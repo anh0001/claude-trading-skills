@@ -125,7 +125,8 @@ How long the theme has been active (consecutive weeks of elevated heat).
 |----------|-------------|
 | 1-3 weeks | Emerging |
 | 4-8 weeks | Accelerating |
-| 9-16 weeks | Mature |
+| 9-12 weeks | Trending |
+| 13-16 weeks | Mature |
 | > 16 weeks | Exhausting |
 
 **Limitation:** Duration tracking requires historical data. On first run, duration defaults to "Unknown" and lifecycle uses other factors only.
@@ -141,9 +142,10 @@ extremity_pct = count(within_5pct_of_52wk_high_or_low) / count(total_stocks)
 
 | Extremity % | Stage Signal |
 |-------------|-------------|
-| < 20%       | Emerging |
-| 20-40%      | Accelerating |
-| 40-60%      | Mature |
+| < 15%       | Emerging |
+| 15-30%      | Accelerating |
+| 30-45%      | Trending |
+| 45-60%      | Mature |
 | > 60%       | Exhausting |
 
 **Data Source:** FINVIZ 52-week high/low data
@@ -171,8 +173,9 @@ relative_pe = avg_theme_pe / sp500_pe
 | Relative P/E | Stage Signal |
 |---------------|-------------|
 | < 0.8         | Emerging (undervalued) |
-| 0.8-1.2       | Accelerating (fair value) |
-| 1.2-2.0       | Mature (overvalued) |
+| 0.8-1.0       | Accelerating (fair value) |
+| 1.0-1.4       | Trending (slightly elevated) |
+| 1.4-2.0       | Mature (overvalued) |
 | > 2.0         | Exhausting (extreme) |
 
 **Data Source:** FMP API for P/E ratios (optional; uses FINVIZ forward P/E as fallback)
