@@ -94,6 +94,7 @@ testpaths = [
     "skills/sector-analyst/scripts/tests",
     "skills/strategy-pivot-designer/scripts/tests",
     # pair-trade-screener, portfolio-manager, signal-postmortem: tests/ exists but no test_*.py
+    "skills/relative-strength-momentum-scanner/scripts/tests",
     "scripts/tests",
 ]
 
