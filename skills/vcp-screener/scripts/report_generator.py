@@ -147,11 +147,13 @@ def generate_markdown_report(
     summary_source = all_results if all_results is not None else results
     summary = _generate_summary(summary_source)
     lines.append(f"- **Total VCP Candidates:** {summary['total']}")
-    lines.append(f"- **Textbook VCP (90+):** {summary['textbook']}")
-    lines.append(f"- **Strong VCP (80-89):** {summary['strong']}")
-    lines.append(f"- **Good VCP (70-79):** {summary['good']}")
-    lines.append(f"- **Developing (60-69):** {summary['developing']}")
-    lines.append(f"- **Weak/No VCP (<60):** {summary['weak']}")
+    lines.append(f"- **Textbook VCP:** {summary['textbook']}")
+    lines.append(f"- **Strong VCP:** {summary['strong']}")
+    lines.append(f"- **Good VCP:** {summary['good']}")
+    lines.append(f"- **Developing VCP:** {summary['developing']}")
+    lines.append(f"- **Weak / No VCP:** {summary['weak']}")
+    lines.append("")
+    lines.append("*Counts are based on final rating (after state caps).*")
     lines.append("")
 
     # Sector distribution (use all_results for full picture)
