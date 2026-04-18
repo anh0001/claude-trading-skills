@@ -59,9 +59,7 @@ class FMPEarningsCalendar:
         params = {"from": start_date, "to": end_date, "apikey": self.api_key}
 
         try:
-            response = requests.get(
-                url, params=params, timeout=30
-            )
+            response = requests.get(url, params=params, timeout=30)
 
             if response.status_code == 401:
                 print("❌ ERROR: Invalid API key", file=sys.stderr)

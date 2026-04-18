@@ -26,6 +26,28 @@ except ImportError:
     sys.exit(1)
 
 
+# --- FMP endpoint fallback: stable (new users) -> v3 (legacy users) ---
+
+
+def _stable_hist_url(base, symbols_str, params):
+    """stable/historical-price-full?symbol=SPY&timeseries=90"""
+    params["symbol"] = symbols_str
+    return base, params
+
+
+def _v3_hist_url(base, symbols_str, params):
+    """api/v3/historical-price-full/SPY?timeseries=90"""
+    return f"{base}/{symbols_str}", params
+
+
+_FMP_ENDPOINTS = {
+    "historical": [
+        ("https://financialmodelingprep.com/stable/historical-price-full", _stable_hist_url),
+        ("https://financialmodelingprep.com/api/v3/historical-price-full", _v3_hist_url),
+    ],
+}
+
+
 class ApiCallBudgetExceeded(Exception):
     """Raised when the API call budget has been exhausted."""
 
@@ -38,6 +60,8 @@ class FMPClient:
     BASE_URL = "https://financialmodelingprep.com/api/v3"
     RATE_LIMIT_DELAY = 0.3  # 300ms between requests
     US_EXCHANGES = ["NYSE", "NASDAQ", "AMEX", "NYSEArca", "BATS", "NMS", "NGM", "NCM"]
+
+    _ENDPOINT_FAILURE_THRESHOLD = 3  # disable endpoint after N consecutive failures
 
     def __init__(self, api_key: Optional[str] = None, max_api_calls: int = 200):
         self.api_key = api_key or os.getenv("FMP_API_KEY")
@@ -55,8 +79,13 @@ class FMPClient:
         self.max_retries = 1
         self.api_calls_made = 0
         self.max_api_calls = max_api_calls
+        # Circuit breaker: track consecutive failures per endpoint URL prefix
+        self._endpoint_failures: dict[str, int] = {}
+        self._disabled_endpoints: set[str] = set()
 
-    def _rate_limited_get(self, url: str, params: Optional[dict] = None) -> Optional[dict]:
+    def _rate_limited_get(
+        self, url: str, params: Optional[dict] = None, quiet: bool = False
+    ) -> Optional[dict]:
         """Execute a rate-limited GET request with budget enforcement."""
         if self.rate_limit_reached:
             return None
@@ -86,16 +115,17 @@ class FMPClient:
                 if self.retry_count <= self.max_retries:
                     print("WARNING: Rate limit exceeded. Waiting 60 seconds...", file=sys.stderr)
                     time.sleep(60)
-                    return self._rate_limited_get(url, params)
+                    return self._rate_limited_get(url, params, quiet=quiet)
                 else:
                     print("ERROR: Daily API rate limit reached.", file=sys.stderr)
                     self.rate_limit_reached = True
                     return None
             else:
-                print(
-                    f"ERROR: API request failed: {response.status_code} - {response.text[:200]}",
-                    file=sys.stderr,
-                )
+                if not quiet:
+                    print(
+                        f"ERROR: API request failed: {response.status_code} - {response.text[:200]}",
+                        file=sys.stderr,
+                    )
                 return None
         except requests.exceptions.Timeout:
             print(f"WARNING: Request timed out for {url}", file=sys.stderr)
@@ -103,6 +133,67 @@ class FMPClient:
         except requests.exceptions.RequestException as e:
             print(f"ERROR: Request exception: {e}", file=sys.stderr)
             return None
+
+    def _request_with_fallback(self, endpoint_key, symbols_str, extra_params=None):
+        """Try stable endpoint first, fall back to v3 for legacy users.
+
+        Returns parsed JSON in v3-compatible shape, or None if all fail.
+        Non-last endpoints use quiet=True to suppress expected 403 stderr.
+        """
+        params = dict(extra_params) if extra_params else {}
+        endpoints = _FMP_ENDPOINTS[endpoint_key]
+        is_single = "," not in symbols_str
+
+        for i, (base_url, url_builder) in enumerate(endpoints):
+            # Circuit breaker: skip endpoints with too many consecutive failures
+            if base_url in self._disabled_endpoints:
+                continue
+
+            url, final_params = url_builder(base_url, symbols_str, dict(params))
+            is_last = i == len(endpoints) - 1
+            data = self._rate_limited_get(url, final_params, quiet=not is_last)
+            if not data:  # falsy (None, [], {}) -- try next endpoint
+                self._record_endpoint_failure(base_url)
+                continue
+
+            # Shape validation: reject truthy-but-wrong-shape responses
+            valid = True
+            if endpoint_key == "historical":
+                if not isinstance(data, dict):
+                    valid = False
+                elif "historicalStockList" in data:
+                    # stable batch format -> v3 single format (exact match only)
+                    norm = symbols_str.replace("-", ".")
+                    found = None
+                    for entry in data["historicalStockList"]:
+                        if entry.get("symbol", "").replace("-", ".") == norm:
+                            found = {
+                                "symbol": entry.get("symbol"),
+                                "historical": entry.get("historical", []),
+                            }
+                            break
+                    if found:
+                        self._endpoint_failures[base_url] = 0
+                        return found
+                    valid = False
+                elif "historical" not in data:
+                    valid = False
+                elif is_single and data.get("symbol"):
+                    if data["symbol"].replace("-", ".") != symbols_str.replace("-", "."):
+                        valid = False
+
+            if valid:
+                self._endpoint_failures[base_url] = 0
+                return data
+            self._record_endpoint_failure(base_url)
+        return None
+
+    def _record_endpoint_failure(self, base_url: str) -> None:
+        """Track consecutive failures and disable endpoint after threshold."""
+        failures = self._endpoint_failures.get(base_url, 0) + 1
+        self._endpoint_failures[base_url] = failures
+        if failures >= self._ENDPOINT_FAILURE_THRESHOLD:
+            self._disabled_endpoints.add(base_url)
 
     def get_earnings_calendar(self, from_date: str, to_date: str) -> Optional[list]:
         """Fetch earnings calendar for a date range.
@@ -172,9 +263,7 @@ class FMPClient:
         if cache_key in self.cache:
             return self.cache[cache_key]
 
-        url = f"{self.BASE_URL}/historical-price-full/{symbol}"
-        params = {"timeseries": days}
-        data = self._rate_limited_get(url, params)
+        data = self._request_with_fallback("historical", symbol, {"timeseries": days})
         if data and "historical" in data:
             result = data["historical"]
             self.cache[cache_key] = result
