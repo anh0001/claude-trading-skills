@@ -202,10 +202,13 @@ def build_plan_for_candidate(
         ),
     ]
 
+    plan_status = _classify_plan_status(reasons["blocking"])
+
     return {
         "ticker": ticker,
         "rank": rank,
         "score": score,
+        "plan_status": plan_status,
         "requires_manual_confirmation": requires_manual_confirmation(reasons),
         "trade_allowed_without_manual": trade_allowed_without_manual(reasons),
         "blocking_manual_reasons": reasons["blocking"],
@@ -220,6 +223,36 @@ def build_plan_for_candidate(
         },
         "entry_plans": entry_plans,
     }
+
+
+# Reasons that prevent trading entirely vs. reasons the trader can clear by
+# confirming at the broker. ``borrow_inventory_unavailable`` and active SSR
+# fall in the "no path forward today" bucket → watch_only. Premarket high/low
+# missing or HTB borrow fee unknown can be cleared by manual checks → still
+# rendered as actionable plans, just gated.
+_HARD_BLOCKERS = frozenset(
+    {
+        "borrow_inventory_unavailable",
+        "ssr_active_today",
+        "ssr_carryover",
+    }
+)
+
+
+def _classify_plan_status(blocking_reasons: list[str]) -> str:
+    """Classify the plan into ``actionable`` / ``watch_only``.
+
+    - ``actionable``: no blocking reasons OR only "manual gate" blockers
+      (HTB fee, premarket high/low unavailable, state caps) that the
+      trader can clear by checking with the broker.
+    - ``watch_only``: at least one hard blocker (borrow unavailable, SSR
+      active/carryover) means today is off-limits regardless of manual
+      confirmation. The plan is still emitted so the trader has a target
+      list, but trade_allowed_without_manual stays False.
+    """
+    if any(r in _HARD_BLOCKERS for r in blocking_reasons):
+        return "watch_only"
+    return "actionable"
 
 
 def build_plan_report(

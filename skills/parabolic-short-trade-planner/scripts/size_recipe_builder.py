@@ -49,14 +49,19 @@ def build_size_recipe(
     max_position_value_usd = account_size * (max_position_pct / 100)
     max_short_exposure_usd = account_size * (max_short_exposure_pct / 100)
 
-    headroom = max_short_exposure_usd - current_short_exposure
-    exposure_check_passed = headroom >= max_position_value_usd
-    if headroom > 0 and not exposure_check_passed:
-        # Tighten max_position_value_usd to whatever room is left so the
-        # plan still works — capped by remaining short-book headroom.
-        max_position_value_usd = max(0.0, headroom)
-    elif headroom <= 0:
+    remaining_short_exposure_capacity = max_short_exposure_usd - current_short_exposure
+    exposure_check_passed = remaining_short_exposure_capacity >= max_position_value_usd
+    exposure_cap_applied = False
+    if remaining_short_exposure_capacity > 0 and not exposure_check_passed:
+        # Cap max_position_value_usd at the remaining short-book capacity
+        # so the plan still produces a tradeable size. Setting
+        # exposure_cap_applied=True flags downstream readers that the
+        # per-symbol cap was tightened from the user-supplied default.
+        max_position_value_usd = max(0.0, remaining_short_exposure_capacity)
+        exposure_cap_applied = True
+    elif remaining_short_exposure_capacity <= 0:
         max_position_value_usd = 0.0
+        exposure_cap_applied = True
 
     return {
         "risk_usd": round(risk_usd, 2),
@@ -64,6 +69,10 @@ def build_size_recipe(
         "shares_formula": SHARES_FORMULA,
         "sizing_rule_applied": SIZING_RULE,
         "max_short_exposure_check_passed": exposure_check_passed,
+        "exposure_cap_applied": exposure_cap_applied,
         "max_short_exposure_usd": round(max_short_exposure_usd, 2),
         "current_short_exposure_usd": round(current_short_exposure, 2),
+        "remaining_short_exposure_capacity_usd": round(
+            max(0.0, remaining_short_exposure_capacity), 2
+        ),
     }
