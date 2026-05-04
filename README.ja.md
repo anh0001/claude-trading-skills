@@ -1,14 +1,73 @@
 # Claude Trading Skills
 
-このリポジトリは、株式投資やトレードに役立つClaudeスキルをまとめたものです。各スキルには、プロンプト設計、参照資料、補助スクリプトが含まれており、システマティックなバックテスト、マーケット分析、テクニカルチャート分析、経済カレンダー監視、米国株リサーチをClaudeに任せることができます。ClaudeのウェブアプリとClaude Codeの両方で活用できます。
+Claude Trading Skills は、作者自身が AI を使って自分のトレードプロセスを改善したいと考えたことから始まりました。
+
+Claude Trading Skills は、時間制約のある個人投資家が、Claude を使って投資・トレード判断を仕組み化するための Claude Skills 集です。
+
+長期投資、ETF、配当株を Core としつつ、相場環境が整ったときには Satellite として規律あるスイングトレードで追加リターンを狙う投資家を主対象にしています。
+
+目的は、AI に売買判断を丸投げすることではありません。市場確認、リスク管理、トレード計画、記録、振り返りを再現可能なプロセスにすることです。より良いトレード判断を支えるワークフロー、チェックリスト、振り返りの習慣は、共有された実践を通じて改善できると考えているため、オープンソースとして公開しています。
+
+これは売買シグナル配信や利益保証のためのプロジェクトではありません。より良い判断プロセスを作りたいトレーダーのための道具箱です。
+
+このプロジェクトの立ち位置は **first for self, open for others** です。まず作者自身が実際に使う実践的な workflow として作り、それを同じ制約を持つ人にも役立つ可能性があるものとして公開します。
 
 📖 **ドキュメントサイト:** <https://tradermonty.github.io/claude-trading-skills/>
 
+**プロジェクトビジョン:** [`PROJECT_VISION.ja.md`](PROJECT_VISION.ja.md)
+
 English README is available at [`README.md`](README.md).
 
+## 免責
+
+このリポジトリは、教育、研究、プロセス改善を目的としたものです。金融助言、投資顧問、税務・法務助言、売買シグナル配信、ブローカー注文執行を提供するものではありません。投資・トレードには元本損失を含むリスクがあります。過去パフォーマンス、バックテスト、スクリーニング結果、レポート、AI が生成した分析は将来の成果を保証しません。最終的な売買判断、ポジションサイズ、税務・規制遵守、ブローカー利用判断は、すべてユーザー自身の責任です。
+
+このプロジェクトは MIT License に基づき、**AS IS, WITHOUT WARRANTY**、つまり保証なしで提供されます。
+
+## このリポジトリが向いている人
+
+このリポジトリは、以下のような人に向いています。
+
+- 投資に使える時間が限られている個人投資家
+- 長期投資を土台にしつつ、相場が良いときだけスイングトレードも行いたい人
+- 配当株、ETF、保有株を定期的に点検したい人
+- 銘柄探しより先に、市場環境とリスクを確認したい人
+- トレードを記録し、振り返りから改善したい人
+
+完全自動売買、売買シグナルの丸投げ、短期スキャルピングを主目的にする人向けではありません。
+
+## おすすめの始め方
+
+初めて使う場合は、Core + Satellite の基本導線から始めるのがおすすめです。
+
+1. **Core Portfolio Weekly**
+   - 長期保有、配当株、ETF、集中リスクを週次で確認する。
+2. **Market Regime Daily**
+   - 今日、新規リスクを取ってよい相場かを確認する。
+3. **Swing Opportunity Daily**
+   - 相場環境が良いときだけ、スイング候補を探す。
+4. **Trade Memory Loop**
+   - トレード仮説、エントリー理由、結果、学びを記録する。
+5. **Monthly Performance Review**
+   - 機能したルール、失敗したルール、改善点を月次で確認する。
+
+## 目的別の始め方
+
+| 目的 | 最初に見る導線 |
+| --- | --- |
+| 毎朝15分で相場を確認したい | Market Regime Daily |
+| 長期ポートフォリオを見直したい | Core Portfolio Weekly |
+| スイング候補を探したい | Swing Opportunity Daily |
+| トレード記録から改善したい | Trade Memory Loop |
+| 新しい戦略を研究したい | Strategy Research |
+
 ## リポジトリ構成
-- `<skill-name>/` – 各スキルのソースフォルダ。`SKILL.md`、参照資料、補助スクリプトが含まれます。
+- `skills/<skill-name>/` – 各スキルのソースフォルダ。`SKILL.md`、参照資料、補助スクリプトが含まれます。
 - `skill-packages/` – Claudeウェブアプリの**Skills**タブへそのままアップロードできる`.skill`パッケージ置き場。
+- `docs/` – ドキュメントサイトのコンテンツと生成済みスキルページ。
+- `scripts/` – リポジトリ全体の自動化・保守スクリプト。
+- `skillsets/` – 追加予定の目的別スキルセット manifest。
+- `workflows/` – 追加予定の実運用 workflow manifest。
 
 ## はじめに
 ### Claudeウェブアプリで使う場合
@@ -23,7 +82,23 @@ English README is available at [`README.md`](README.md).
 
 > ヒント: ソースフォルダとZIPの内容は同一です。スキルをカスタマイズする場合はソースフォルダを編集し、ウェブアプリ向けに配布するときは再度ZIP化してください。
 
-## スキル一覧
+## 主要スキル領域
+
+このリポジトリには、以下の領域のスキルが含まれます。
+
+| 領域 | 代表スキル |
+| --- | --- |
+| Market Regime | `market-breadth-analyzer`, `uptrend-analyzer`, `exposure-coach` |
+| Core Portfolio | `portfolio-manager`, `value-dividend-screener`, `kanchi-dividend-sop` |
+| Swing Opportunities | `vcp-screener`, `canslim-screener`, `breakout-trade-planner` |
+| Trade Planning | `position-sizer`, `technical-analyst` |
+| Trade Memory | `trader-memory-core`, `signal-postmortem` |
+| Strategy Research | `backtest-expert`, `edge-pipeline-orchestrator` |
+| Advanced Satellite | `parabolic-short-trade-planner`, `earnings-trade-analyzer`, `options-strategy-advisor` |
+
+以下の詳細カタログはクイックリファレンスとして残しています。より見やすい一覧はドキュメントサイトを参照してください。
+
+## 詳細スキル一覧
 
 ### マーケット分析・リサーチ
 
@@ -125,7 +200,7 @@ English README is available at [`README.md`](README.md).
 - **米国市場バブル検出器** (`us-market-bubble-detector`)
   - 定量的8指標「バブルメーター」スコアリングシステムを備えたミンスキー/キンドルバーガーバブルフレームワーク。
   - バブルステージを識別：転換 → ブーム → 熱狂 → 利益確定 → パニック。
-  - 各ステージの実行可能なプレイブックを提供：利益確定戦略、ヘッジ戦術、現金展開タイミング。
+  - 各ステージのレビュー用プレイブックを提供：利益確定検討、ヘッジ検討、現金展開タイミングの確認。
   - 歴史的ケースファイル（ドットコム2000、住宅2008、COVID 2020）、クイックリファレンスチェックリスト（日英）、対話型スコアラースクリプト`scripts/bubble_scorer.py`を補足。
 
 - **オプション戦略アドバイザー** (`options-strategy-advisor`)
@@ -136,13 +211,14 @@ English README is available at [`README.md`](README.md).
 - **ポートフォリオマネージャー** (`portfolio-manager`)
   - Alpaca MCP Server連携によるリアルタイム保有データを使った包括的ポートフォリオ分析・管理。
   - 多次元分析: 資産配分、セクター分散、リスク指標（ベータ、ボラティリティ、ドローダウン）、パフォーマンスレビュー。
-  - HOLD/ADD/TRIM/SELLのポジションレベル推奨とリバランス計画を生成。
+  - HOLD/ADD/TRIM/SELL などの検討フラグを生成し、ユーザー自身のレビューを支援する。
+  - リバランス案を生成し、実際にどのアクションを取るかはユーザーが手動で判断する。
   - Alpaca証券口座（ペーパーまたはライブ）とAlpaca MCP Serverの設定が必要。
 
 - **ポジションサイザー** (`position-sizer`)
   - Fixed Fractional、ATRベース、Kelly Criterionの3手法でロング株式トレードのリスクベースポジションサイズを計算。
   - ポートフォリオ制約（最大ポジション%、最大セクター%）を適用し、最も厳しい制約（binding constraint）を特定。
-  - 2つの出力モード: sharesモード（エントリー/ストップ指定）で最終推奨株数、budgetモード（Kelly単独）で推奨リスク予算を返却。
+  - 2つの出力モード: sharesモード（エントリー/ストップ指定）で株数候補、budgetモード（Kelly単独）でリスク予算候補を返却。
   - JSON + マークダウンレポートを生成。APIキー不要 — 純粋計算、オフラインで動作。
 
 - **Parabolic Short トレードプランナー** (`parabolic-short-trade-planner`)
@@ -278,7 +354,7 @@ English README is available at [`README.md`](README.md).
   - Phase 2では7コンポーネントのうち6つを実装（80%カバレッジ）：C (四半期決算)、A (年次成長)、N (新高値)、S (需給)、I (機関投資家)、M (市場方向)。
   - 複合スコアリング（0-100）と重み付け：C 19%、A 25%、N 19%、S 19%、I 13%、M 6%。
   - ボリュームベースの蓄積/分配分析（Sコンポーネント）とFinvizフォールバック付き機関投資家所有率追跡（Iコンポーネント）。
-  - ベアマーケット保護：Mコンポーネントが全ての買い推奨をゲート（M=0で「現金化」警告）。
+  - ベアマーケット保護：Mコンポーネントがロングエントリー検討をゲート（M=0で「現金化」警告）。
   - FMP API統合。無料ティア（250 calls/日）で40銘柄分析可能。
   - 将来のPhase 3でL (リーダーシップ/RS Rank) コンポーネントを追加して全7コンポーネント完成予定。
 
@@ -325,7 +401,9 @@ English README is available at [`README.md`](README.md).
   - 高配当バリュー、小型成長株、売られすぎ大型株、ブレイクアウト候補、AI/テーマ投資等、14のプリセットレシピを収録。
   - 基本利用にAPIキー不要（パブリックFinVizスクリーナー）。FINVIZ Eliteは任意で拡張機能利用可能。
 
-## ワークフロー例
+## 追加ワークフロー例
+
+Core + Satellite の主導線は上記の「おすすめの始め方」にまとめています。以下は、Advanced Satellite やコントリビューター向けを含む追加の組み合わせ例です。
 
 ### 日次マーケット監視
 1. **経済カレンダー取得**を使用して、今日の高インパクトイベント（FOMC、NFP、CPI発表）をチェック
@@ -394,6 +472,8 @@ English README is available at [`README.md`](README.md).
 
 ## スキル自己改善ループ
 
+このセクションはコントリビューター向けです。初めて使う人は読み飛ばして、上記の Core + Satellite 導線から始めてください。
+
 スキル品質を継続的にレビュー・改善する自動パイプライン。毎日の`launchd`ジョブが1つのスキルを選択し、デュアルアクシスレビュアーでスコアリングし、スコアが90/100未満の場合は`claude -p`で改善を適用してPRを作成します。
 
 ### 仕組み
@@ -446,6 +526,8 @@ launchctl start com.trade-analysis.skill-improvement
 | `reports/skill-improvement-log/` | 日次サマリーレポート |
 
 ## スキル自動生成パイプライン
+
+このセクションはコントリビューター向けです。トレード運用に必須の workflow ではなく、リポジトリ保守用の自動化です。
 
 セッションログからスキルアイデアをマイニング（週次）し、設計・レビュー・PR作成（日次）を自動実行するパイプライン。自己改善ループと連携してスキルカタログを継続的に拡張します。
 
