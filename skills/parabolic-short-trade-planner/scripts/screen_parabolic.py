@@ -263,7 +263,14 @@ def screen_one_candidate(
     raw_metrics = component_payload["raw_metrics"]
     candidate_for_invalidation["adv_20d_usd"] = raw_metrics.get("adv_20d_usd")
 
-    invalidation = check_invalidation(candidate_for_invalidation, mode=mode)
+    # Plumb the CLI override into the invalidation rules so a non-default
+    # --exclude-earnings-within-days is actually honored by the hard
+    # blackout (the mode-default would otherwise stay at 2 calendar days).
+    invalidation = check_invalidation(
+        candidate_for_invalidation,
+        mode=mode,
+        override={"earnings_blackout_days": args.exclude_earnings_within_days},
+    )
     if invalidation["is_invalid"]:
         logger.debug("Rejected %s: invalidation (%s)", ticker, ", ".join(invalidation["reasons"]))
         return None

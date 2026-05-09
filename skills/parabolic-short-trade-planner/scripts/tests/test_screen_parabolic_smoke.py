@@ -37,6 +37,23 @@ def _flnc_like_fixture(tmp_path, last_earnings_date: str = "2026-04-28"):
     return out_path
 
 
+def _upcoming_earnings_fixture(tmp_path, next_earnings_date: str):
+    """Clone the minimal fixture and set the XYZ symbol's next earnings.
+
+    Used to exercise the forward-looking blackout via
+    ``--exclude-earnings-within-days``.
+    """
+    fixture = json.loads(FIXTURE_PATH.read_text())
+    for sym in fixture["symbols"]:
+        if sym["ticker"] == "XYZ":
+            sym["next_earnings_date"] = next_earnings_date
+            sym["market_data_as_of"] = "2026-04-30"
+            break
+    out_path = tmp_path / "dry_run_with_upcoming_earnings.json"
+    out_path.write_text(json.dumps(fixture))
+    return out_path
+
+
 def _make_args(**overrides):
     parser = screen_parabolic.build_arg_parser()
     args = parser.parse_args(
@@ -165,6 +182,42 @@ class TestRecentEarningsCatalystWarning:
         assert report["market_data_as_of"] == "2026-04-30"
         assert "mixed_market_data_as_of" not in report["warnings"]
         assert report["as_of"] == report["run_date"] == "2026-04-30"
+
+
+class TestExcludeEarningsWithinDaysOverride:
+    """The CLI flag ``--exclude-earnings-within-days`` must propagate as
+    an override into ``check_invalidation`` so the hard blackout uses
+    the user-supplied threshold, not the mode default of 2 calendar days.
+    """
+
+    def test_default_threshold_excludes_within_2_calendar_days(self, tmp_path):
+        # next_earnings_date is 1 calendar day after market_data_as_of
+        # (2026-04-30 → 2026-05-01) — caught by the default blackout of 2.
+        fixture = _upcoming_earnings_fixture(tmp_path, next_earnings_date="2026-05-01")
+        args = _make_args()  # default --exclude-earnings-within-days 2
+        candidates = screen_parabolic.run_dry_run(str(fixture), args)
+        assert all(c["ticker"] != "XYZ" for c in candidates), (
+            "XYZ should be hard-invalidated when next earnings is 1 day out"
+        )
+
+    def test_default_threshold_keeps_candidate_4_days_out(self, tmp_path):
+        # 4 calendar days out — outside the default 2-day blackout.
+        fixture = _upcoming_earnings_fixture(tmp_path, next_earnings_date="2026-05-04")
+        args = _make_args()
+        candidates = screen_parabolic.run_dry_run(str(fixture), args)
+        assert any(c["ticker"] == "XYZ" for c in candidates)
+
+    def test_widened_threshold_excludes_4_days_out(self, tmp_path):
+        # Same fixture (4 calendar days out) but with --exclude-earnings-within-days 5.
+        # Without the override plumbing, this widened threshold is silently
+        # ignored and the candidate slips through.
+        fixture = _upcoming_earnings_fixture(tmp_path, next_earnings_date="2026-05-04")
+        args = _make_args(exclude_earnings_within_days=5)
+        candidates = screen_parabolic.run_dry_run(str(fixture), args)
+        assert all(c["ticker"] != "XYZ" for c in candidates), (
+            "XYZ should be hard-invalidated when next earnings is 4 days out "
+            "and --exclude-earnings-within-days=5"
+        )
 
 
 class TestMainCLI:
