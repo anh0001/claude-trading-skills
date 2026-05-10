@@ -18,17 +18,27 @@ For the full schema, error codes, and validator rules, see [`docs/dev/metadata-a
 
 ## How to read a manifest
 
-A workflow manifest has four main sections:
+A workflow manifest has these main sections:
 
 1. **Header** — `id`, `display_name`, `cadence`, `estimated_minutes`, `target_users`, `difficulty`, `api_profile`, plus `when_to_run` / `when_not_to_run` guidance.
 2. **`required_skills` / `optional_skills`** — the skills you need installed to run this workflow. Required skills must appear in at least one non-optional step.
-3. **`artifacts`** — every named output, with `produced_by_step`, `required` flag, and (optional) `downstream_hints` for navigation. The validator cross-checks `produced_by_step` against each step's `produces:` list.
-4. **`steps`** — ordered execution. Each step names exactly one skill, may be `optional`, may be a `decision_gate` (which requires a `decision_question`), and declares what it `consumes` and `produces`.
+3. **`prerequisite_workflows`** *(optional)* — informational hint that this workflow expects an artifact from another workflow upstream (e.g. `swing-opportunity-daily` expects `exposure_decision` from `market-regime-daily`). Validator does NOT enforce — see "Inter-workflow data flow" below.
+4. **`artifacts`** — every named output, with `produced_by_step`, `required` flag, and (optional) `downstream_hints` for navigation. The validator cross-checks `produced_by_step` against each step's `produces:` list.
+5. **`steps`** — ordered execution. Each step names exactly one skill, may be `optional`, may be a `decision_gate` (which requires a `decision_question`), and declares what it `consumes` and `produces`.
 
 Below the steps:
 - **`manual_review`** — checklist items the human must confirm. Workflows are semi-automated, not auto-execution. Human judgment remains in the loop.
 - **`journal_destination`** — which skill captures the workflow's outcome (always `trader-memory-core` here).
 - **`final_outputs`** — only on `monthly-performance-review`. Separates trade-side improvements from repo-side improvements.
+
+### `consumes:` means "use if available", not "required input"
+
+A step's `consumes:` list documents which artifacts the step **may read** if earlier steps produced them. Whether the artifact actually exists at run time depends on whether its producing step ran:
+
+- If the producing step is **non-optional**, the artifact always exists. Treat it as required input.
+- If the producing step is **optional** (`optional: true`), the consuming step must gracefully handle the absent case. Example: `exposure-coach` runs with or without `top_risk_report`.
+
+This is intentionally minimal — there is no separate `optional_consumes:` field. The optionality lives on the *producer*, and the consumer must handle it. See `docs/dev/metadata-and-workflow-schema.md` § 2.3 for the full rule.
 
 ## Worked example
 
@@ -59,9 +69,12 @@ Step 4 is a decision gate — the workflow does not proceed mechanically. The hu
 
 ## Inter-workflow data flow
 
-Workflows can `downstream_hints` an artifact at workflows that may consume it (e.g. `exposure_decision` from `market-regime-daily` is hinted at `swing-opportunity-daily`). These hints are **informational only** — the validator does NOT enforce inter-workflow consumption. The trader is responsible for actually feeding the upstream artifact into the downstream workflow.
+Two informational fields document inter-workflow ordering. **Both are NOT validated.** They exist for human navigation and a future Navigator skill. If a hard inter-workflow contract is needed, it will be added as a new field, never by repurposing these.
 
-If a hard inter-workflow contract is needed in the future, it will be added as a new field. `downstream_hints` will never be repurposed.
+- **`artifacts[].downstream_hints`** — on the upstream workflow, lists workflows that may consume this artifact. (E.g. `market-regime-daily`'s `exposure_decision` hints `swing-opportunity-daily`.)
+- **`prerequisite_workflows`** — on the downstream workflow, lists upstream workflows that should run first. (E.g. `swing-opportunity-daily.prerequisite_workflows` declares it expects `exposure_decision` from `market-regime-daily`.)
+
+The two fields point at the same dependency from opposite sides. Use both for clarity; do not assume the validator enforces either. The trader is responsible for actually feeding the upstream artifact into the downstream workflow.
 
 ## Running a workflow
 

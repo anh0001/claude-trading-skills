@@ -26,6 +26,15 @@ optional_skills:
   - breakout-trade-planner
   - theme-detector
 
+# Informational only — validator does NOT enforce inter-workflow ordering.
+# See docs/dev/metadata-and-workflow-schema.md § 2.4.
+prerequisite_workflows:
+  - id: market-regime-daily
+    artifact: exposure_decision
+    rationale: >-
+      New swing trade risk requires a non-restrictive exposure decision.
+      Skip this workflow on cash-priority or restrictive days.
+
 artifacts:
   - id: vcp_candidates
     produced_by_step: 1

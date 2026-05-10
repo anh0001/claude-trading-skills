@@ -66,11 +66,12 @@ This path lets you review market conditions, size trades, journal decisions, and
 
 ## Repository Layout
 - `skills/<skill-name>/` – Source folder for each trading skill. Contains `SKILL.md`, reference material, and any helper scripts.
+- `skills-index.yaml` – Canonical metadata index for every skill (id, category, integrations, workflows back-references).
+- `workflows/` – Operational workflow manifests for the Core + Satellite routines (canonical, validator-enforced via `--strict-workflows`).
 - `skill-packages/` – Pre-built `.skill` archives ready to upload to Claude's web app **Skills** tab.
-- `docs/` – Documentation site content and generated skill pages.
-- `scripts/` – Repository-level automation and maintenance scripts.
-- `skillsets/` – Planned skillset manifests for bundled workflows.
-- `workflows/` – Planned workflow manifests for operational routines.
+- `docs/` – Documentation site content, generated skill pages, and `docs/dev/metadata-and-workflow-schema.md` (schema spec).
+- `scripts/` – Repository-level automation, including the schema validator and one-shot bootstrap helper.
+- `skillsets/` – Planned skillset manifests for bundled workflows (vision Phase 2, not yet present).
 
 ## Getting Started
 ### Use with Claude Web App

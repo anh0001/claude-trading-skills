@@ -157,6 +157,11 @@ when_not_to_run: >-
 required_skills: [<skill-id>, ...]
 optional_skills: [<skill-id>, ...]
 
+prerequisite_workflows:           # informational only, NOT validated
+  - id: <workflow-id>
+    artifact: <artifact-id>       # which upstream artifact this workflow expects
+    rationale: <why>
+
 artifacts:
   - id: <artifact-id>
     produced_by_step: <step-number>
@@ -202,23 +207,49 @@ These are validated under `--strict-workflows`:
 | Every non-optional `step.skill` appears in `required_skills` | `WF010` |
 | Workflow file referenced by an index entry's `workflows:` exists | `WF001` |
 
-### 2.3 Optional-artifact consumption
+### 2.3 `consumes:` semantics — "use if available", not "required input"
 
-A step's `consumes:` list MAY reference an artifact whose `required: false`. Validator checks:
+A step's `consumes:` list documents which artifacts the step **may read** if those artifacts have been produced by earlier steps. It is NOT a hard "required input" declaration.
 
-- The artifact is declared in `artifacts:` ✅
-- The artifact is produced by an earlier step ✅
-- The optional-producing step actually runs at execution time — NOT validated. Operational concern, not schema concern.
+Concretely:
+
+- If a consumed artifact's producing step is **non-optional**, the artifact will always exist at execution time. Treat it as required input.
+- If a consumed artifact's producing step is **optional** (`optional: true`), the consuming step must handle the case where the artifact is absent. The consuming skill itself decides graceful-degrade behavior — e.g. `exposure-coach` runs with or without `top_risk_report`.
+
+Validator rules:
+
+- The artifact must be declared in `artifacts:` ✅ (`WF007`)
+- The artifact must be produced by an earlier step ✅ (`WF007`)
+- Whether the producing step actually executes at runtime — NOT validated. That is operational concern, not schema concern.
 
 A step's `consumes:` list MAY NOT reference an artifact produced in a later step (covered by `WF007`).
 
-### 2.4 `downstream_hints` is informational
+Why no `optional_consumes:` field? In a list-form schema, "use if available" is the default for any artifact whose producer is `optional: true`. Adding a parallel field would duplicate information already encoded in `artifacts[].produced_by_step` + `steps[].optional`. If a future case needs hard "required input" semantics, that will be added as a new field — never by repurposing `consumes:`.
+
+### 2.4 `prerequisite_workflows:` — informational ordering hint
+
+Some workflows depend on the output of another workflow (e.g. `swing-opportunity-daily` should only run after a non-restrictive `market-regime-daily` exposure decision). To make this dependency machine-readable for a future Navigator, declare it at the top of the workflow:
+
+```yaml
+prerequisite_workflows:
+  - id: market-regime-daily
+    artifact: exposure_decision
+    rationale: >-
+      Swing trade entries require a non-restrictive exposure decision. Skip this
+      workflow on cash-priority days.
+```
+
+This field is **informational only**. The validator does NOT check that the named workflow exists, that the artifact exists, or that the prerequisite ran today. It is the trader's responsibility (and, eventually, the Navigator's) to enforce ordering.
+
+If a hard inter-workflow contract is needed in the future, it will be added as a new field — never by repurposing `prerequisite_workflows`.
+
+### 2.5 `downstream_hints` is informational
 
 `artifacts[].downstream_hints` is a free-form list of workflow IDs that *might* consume the artifact downstream. The validator does not check this. It is meant for human navigation and (future) Navigator hints.
 
 If a hard inter-workflow contract is needed later, add a separate field (e.g. `consumed_by_workflows: [...]` with strict semantics). Never repurpose `downstream_hints`.
 
-### 2.5 `one_of:` is intentionally NOT in v1
+### 2.6 `one_of:` is intentionally NOT in v1
 
 Cases like "either `vcp-screener` or `canslim-screener`" are expressed by:
 
