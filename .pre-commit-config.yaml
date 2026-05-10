@@ -69,6 +69,17 @@ repos:
         files: '^(skills-index\.yaml|skills/[^/]+/SKILL\.md|workflows/.*\.yaml|scripts/validate_skills_index\.py|scripts/tests/test_validate_skills_index\.py|docs/dev/metadata-and-workflow-schema\.md)$'
         pass_filenames: false
 
+      # Pre-push hook: run validator in --strict-workflows mode (workflow file
+      # existence + workflow internal-consistency). Pre-commit stays in default
+      # mode so commits during workflow drafting are not blocked.
+      - id: validate-skills-index-strict
+        name: Validate skills-index.yaml + workflows (strict)
+        entry: python3 scripts/validate_skills_index.py --strict-workflows
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
+
       # Pre-push hook: run all skill-level tests before pushing
       # Tests run per-skill to avoid module name collisions (scorer.py, helpers.py, etc.)
       - id: pytest-pre-push
