@@ -67,13 +67,15 @@ skills:
 
 | Field | Rule |
 |---|---|
-| `timeframe` | One of the enum values; `unknown` allowed by default. |
-| `difficulty` | One of the enum values; `unknown` allowed by default. |
+| `timeframe` | One of the enum values. `unknown` allowed under `default` / `--strict-workflows` (warn); rejected under `--strict-metadata`. |
+| `difficulty` | One of the enum values. `unknown` allowed under `default` / `--strict-workflows` (warn); rejected under `--strict-metadata`. |
 | `integrations` | List form (see §1.3). May be empty for skills with no dependencies, but prefer `[{id: local_calculation, type: calculation, requirement: not_required}]`. |
-| `inputs` | List of strings. May be `[]`. |
-| `outputs` | List of strings. May be `[]`. |
+| `inputs` | List of strings. Empty list (`[]`) allowed under `default` / `--strict-workflows` (warn); `--strict-metadata` requires at least one entry. |
+| `outputs` | List of strings. Empty list (`[]`) allowed under `default` / `--strict-workflows` (warn); `--strict-metadata` requires at least one entry. |
 | `workflows` | List of workflow IDs. Default mode warns on missing files; `--strict-workflows` errors. |
 | `hand_written_doc` | Boolean. Defaults to `false`. |
+
+As of 2026-05-12 the canonical `skills-index.yaml` populates `timeframe`, `difficulty`, `inputs`, and `outputs` for all 54 skills, and `--strict-metadata` is enforced in CI + the pre-push hook. New skill entries must satisfy `--strict-metadata` to merge.
 
 ### 1.3 `integrations` schema
 
