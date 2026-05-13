@@ -60,6 +60,15 @@ repos:
         files: 'skills/.*/SKILL\.md$|docs/.*/skills/.*\.md$'
         pass_filenames: false
 
+      - id: validate-skills-index
+        name: Validate skills-index.yaml against skills/ folder
+        entry: python3 scripts/validate_skills_index.py
+        language: system
+        # Re-run whenever any of the SSoT inputs OR the validator/spec change.
+        # pass_filenames: false → hook always validates the entire repo.
+        files: '^(skills-index\.yaml|skills/[^/]+/SKILL\.md|workflows/.*\.yaml|scripts/validate_skills_index\.py|scripts/tests/test_validate_skills_index\.py|docs/dev/metadata-and-workflow-schema\.md)$'
+        pass_filenames: false
+
       # Pre-push hook: run all skill-level tests before pushing
       # Tests run per-skill to avoid module name collisions (scorer.py, helpers.py, etc.)
       - id: pytest-pre-push
