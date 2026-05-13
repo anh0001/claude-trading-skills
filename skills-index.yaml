@@ -14,8 +14,8 @@ skills:
   category: strategy-research
   status: production
   summary: Expert guidance for systematic backtesting of trading strategies.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: user_input
     type: local_file
@@ -33,8 +33,8 @@ skills:
   status: production
   summary: This skill should be used when analyzing market breadth charts, specifically the S&P 500 Breadth
     Index (200-Day MA based) and the US Stock Market Uptrend Stock Ratio charts.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: intermediate
   integrations:
   - id: chart_image
     type: image
@@ -51,8 +51,8 @@ skills:
   summary: Generate Minervini-style breakout trade plans from VCP screener output with worst-case risk
     calculation, portfolio heat management, and Alpaca-compatible order templates (stop-limit bracket
     for pre-placement, limit bracket for post-confi...
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -68,8 +68,8 @@ skills:
   category: swing-opportunity
   status: production
   summary: Screen US stocks using William O'Neil's CANSLIM growth stock methodology.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -85,8 +85,8 @@ skills:
   category: meta
   status: production
   summary: Validate data quality in market analysis documents and blog articles before publication.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: beginner
   integrations:
   - id: local_calculation
     type: calculation
@@ -102,8 +102,8 @@ skills:
   status: production
   summary: Use this skill to find high-quality dividend growth stocks (12%+ annual dividend growth, 1.5%+
     yield) that are experiencing temporary pullbacks, identified by RSI oversold conditions (RSI ≤40).
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -123,8 +123,8 @@ skills:
   status: production
   summary: Analyze historical downtrend durations and generate interactive HTML histograms showing typical
     correction lengths by sector and market cap.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -140,8 +140,8 @@ skills:
   status: production
   summary: 'Review skills in any project using a dual-axis method: (1) deterministic code-based checks
     (structure, scripts, tests, execution safety) and (2) LLM deep review findings.'
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -158,8 +158,8 @@ skills:
   status: production
   summary: This skill retrieves upcoming earnings announcements for US stocks using the Financial Modeling
     Prep (FMP) API.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: beginner
   integrations:
   - id: fmp
     type: market_data
@@ -175,8 +175,8 @@ skills:
   status: production
   summary: Analyze recent post-earnings stocks using a 5-factor scoring system (Gap Size, Pre-Earnings
     Trend, Volume Trend, MA200 Position, MA50 Position).
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -191,8 +191,8 @@ skills:
   category: meta
   status: production
   summary: Fetch upcoming economic events and data releases using FMP API.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: beginner
   integrations:
   - id: fmp
     type: market_data
@@ -208,8 +208,8 @@ skills:
   status: production
   summary: Generate and prioritize US equity long-side edge research tickets from EOD observations, then
     export pipeline-ready candidate specs for trade-strategy-pipeline Phase I.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: fmp
     type: market_data
@@ -225,8 +225,8 @@ skills:
   status: production
   summary: Abstract detector tickets and hints into reusable edge concepts with thesis, invalidation signals,
     and strategy playbooks before strategy design/export.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -242,8 +242,8 @@ skills:
   status: production
   summary: Extract edge hints from daily market observations and news reactions, with optional LLM ideation,
     and output canonical hints.yaml for downstream concept synthesis and auto detection.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -259,8 +259,8 @@ skills:
   status: production
   summary: Orchestrate the full edge research pipeline from candidate detection through strategy design,
     review, revision, and export.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -277,8 +277,8 @@ skills:
   summary: Aggregate and rank signals from multiple edge-finding skills (edge-candidate-agent, theme-detector,
     sector-analyst, institutional-flow-tracker) into a prioritized conviction dashboard with weighted
     scoring, deduplication, and contradicti...
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -294,8 +294,8 @@ skills:
   status: production
   summary: Convert abstract edge concepts into strategy draft variants and optional exportable ticket
     YAMLs for edge-candidate-agent export/validation.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -309,9 +309,10 @@ skills:
   display_name: Edge Strategy Reviewer
   category: strategy-research
   status: production
-  summary: Critically review strategy drafts from edge-strategy-designer for edge plausibility, overfitting risk, sample size adequacy, and execution realism.
-  timeframe: unknown
-  difficulty: unknown
+  summary: Critically review strategy drafts from edge-strategy-designer for edge plausibility, overfitting
+    risk, sample size adequacy, and execution realism.
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -328,8 +329,8 @@ skills:
   summary: Generate a one-page Market Posture summary with net exposure ceiling, growth-vs-value bias,
     participation breadth, and new-entry-allowed vs cash-priority recommendation by integrating signals
     from breadth, regime, and flow analysis skills.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: beginner
   integrations:
   - id: local_calculation
     type: calculation
@@ -345,8 +346,8 @@ skills:
   category: swing-opportunity
   status: production
   summary: Build and open FinViz screener URLs from natural language requests.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: beginner
   integrations:
   - id: finviz
     type: screener
@@ -362,8 +363,8 @@ skills:
   status: production
   summary: Detects Follow-Through Day (FTD) signals for market bottom confirmation using William O'Neil's
     methodology.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -380,8 +381,8 @@ skills:
   summary: Detect IBD-style Distribution Days for QQQ/SPY (close down at least 0.2% on higher volume),
     track 25-session expiration and 5% invalidation, count d5/d15/d25 clusters, classify market risk (NORMAL/CAUTION/HIGH/SEVERE),
     and emit TQQQ/QQQ...
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -397,8 +398,8 @@ skills:
   status: production
   summary: Use this skill to track institutional investor ownership changes and portfolio flows using
     13F filings data.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -414,8 +415,8 @@ skills:
   status: production
   summary: Monitor dividend portfolios with Kanchi-style forced-review triggers (T1-T5) and convert anomalies
     into OK/WARN/REVIEW states without auto-selling.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: beginner
   integrations:
   - id: fmp
     type: market_data
@@ -431,8 +432,8 @@ skills:
   category: core-portfolio
   status: production
   summary: Convert Kanchi-style dividend investing into a repeatable US-stock operating procedure.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -447,8 +448,8 @@ skills:
   category: core-portfolio
   status: production
   summary: Provide US dividend tax and account-location workflow for Kanchi-style income portfolios.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -464,8 +465,8 @@ skills:
   category: market-regime
   status: production
   summary: Detect structural macro regime transitions (1-2 year horizon) using cross-asset ratio analysis.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: advanced
   integrations:
   - id: yfinance_or_csv
     type: market_data
@@ -481,8 +482,8 @@ skills:
   category: market-regime
   status: production
   summary: Quantifies market breadth health using TraderMonty's public CSV data.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: beginner
   integrations:
   - id: public_csv
     type: local_file
@@ -498,8 +499,8 @@ skills:
   category: market-regime
   status: production
   summary: Comprehensive market environment analysis and reporting tool.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: intermediate
   integrations:
   - id: websearch
     type: web
@@ -519,8 +520,8 @@ skills:
   status: production
   summary: This skill should be used when analyzing recent market-moving news events and their impact
     on equity markets and commodities.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: intermediate
   integrations:
   - id: websearch
     type: web
@@ -536,8 +537,8 @@ skills:
   status: production
   summary: Detects market top probability using O'Neil Distribution Days, Minervini Leading Stock Deterioration,
     and Monty Defensive Sector Rotation.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: intermediate
   integrations:
   - id: public_csv
     type: local_file
@@ -553,8 +554,8 @@ skills:
   category: advanced-satellite
   status: production
   summary: Options trading strategy analysis and simulation tool.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: advanced
   integrations:
   - id: fmp
     type: market_data
@@ -569,8 +570,8 @@ skills:
   category: advanced-satellite
   status: production
   summary: Statistical arbitrage tool for identifying and analyzing pair trading opportunities.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: fmp
     type: market_data
@@ -586,8 +587,8 @@ skills:
   status: production
   summary: Screen US equities for parabolic exhaustion patterns and generate conditional pre-market short
     plans, then evaluate intraday trigger fires from live 5-min bars.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: advanced
   integrations:
   - id: fmp
     type: market_data
@@ -606,8 +607,8 @@ skills:
   category: advanced-satellite
   status: production
   summary: Screen post-earnings gap-up stocks for PEAD (Post-Earnings Announcement Drift) patterns.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -624,8 +625,8 @@ skills:
   summary: Comprehensive portfolio analysis using Alpaca MCP Server integration to fetch holdings and
     positions, then analyze asset allocation, risk metrics, individual stock positions, diversification,
     and generate rebalancing recommendations.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: alpaca
     type: broker
@@ -641,8 +642,8 @@ skills:
   category: trade-planning
   status: production
   summary: Calculate risk-based position sizes for long stock trades.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: beginner
   integrations:
   - id: local_calculation
     type: calculation
@@ -657,9 +658,10 @@ skills:
   display_name: Scenario Analyzer
   category: strategy-research
   status: production
-  summary: Analyze 18-month scenarios from news headlines via scenario-analyst agent with strategy-reviewer second opinion; outputs primary/secondary/tertiary impact analysis and stock picks in Japanese.
-  timeframe: unknown
-  difficulty: unknown
+  summary: Analyze 18-month scenarios from news headlines via scenario-analyst agent with strategy-reviewer
+    second opinion; outputs primary/secondary/tertiary impact analysis and stock picks in Japanese.
+  timeframe: event-driven
+  difficulty: advanced
   integrations:
   - id: websearch
     type: web
@@ -674,8 +676,8 @@ skills:
   category: market-regime
   status: production
   summary: This skill should be used when analyzing sector rotation patterns and market cycle positioning.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: chart_image
     type: image
@@ -690,8 +692,8 @@ skills:
   category: trade-memory
   status: production
   summary: Record and analyze post-trade outcomes for signals generated by edge pipeline and other skills.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: beginner
   integrations:
   - id: local_calculation
     type: calculation
@@ -708,8 +710,8 @@ skills:
   category: meta
   status: production
   summary: Design new Claude skills from structured idea specifications.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -724,8 +726,8 @@ skills:
   category: meta
   status: production
   summary: Mine Claude Code session logs for skill idea candidates.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -741,8 +743,8 @@ skills:
   status: production
   summary: Validate multi-skill workflows defined in CLAUDE.md by checking skill existence, inter-skill
     data contracts (JSON schema compatibility), file naming conventions, and handoff integrity.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: intermediate
   integrations:
   - id: local_calculation
     type: calculation
@@ -759,8 +761,8 @@ skills:
   summary: Druckenmiller Strategy Synthesizer - Integrates 8 upstream skill outputs (Market Breadth, Uptrend
     Analysis, Market Top, Macro Regime, FTD Detector, VCP Screener, Theme Detector, CANSLIM Screener)
     into a unified conviction score (0-100),...
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -776,8 +778,8 @@ skills:
   status: production
   summary: Detect backtest iteration stagnation and generate structurally different strategy pivot proposals
     when parameter tuning reaches a local optimum.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -793,8 +795,8 @@ skills:
   status: production
   summary: This skill should be used when analyzing weekly price charts for stocks, stock indices, cryptocurrencies,
     or forex pairs.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: intermediate
   integrations:
   - id: chart_image
     type: image
@@ -810,8 +812,8 @@ skills:
   category: swing-opportunity
   status: production
   summary: Detect and analyze trending market themes across sectors.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -830,9 +832,10 @@ skills:
   display_name: Trade Hypothesis Ideator
   category: trade-memory
   status: production
-  summary: Generate falsifiable trade strategy hypotheses from market data, trade logs, and journal snippets with ranked hypothesis cards and optional strategy.yaml export.
-  timeframe: unknown
-  difficulty: unknown
+  summary: Generate falsifiable trade strategy hypotheses from market data, trade logs, and journal snippets
+    with ranked hypothesis cards and optional strategy.yaml export.
+  timeframe: research
+  difficulty: advanced
   integrations:
   - id: local_calculation
     type: calculation
@@ -848,8 +851,8 @@ skills:
   status: production
   summary: Track investment theses across their lifecycle — from screening idea to closed position with
     postmortem.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: beginner
   integrations:
   - id: fmp
     type: market_data
@@ -869,8 +872,8 @@ skills:
   status: production
   summary: Analyzes market breadth using Monty's Uptrend Ratio Dashboard data to diagnose the current
     market environment.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: beginner
   integrations:
   - id: public_csv
     type: local_file
@@ -887,8 +890,8 @@ skills:
   status: production
   summary: Evaluates market bubble risk through quantitative data-driven analysis using the revised Minsky/Kindleberger
     framework v2.1.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: user_input
     type: local_file
@@ -905,8 +908,8 @@ skills:
   summary: Comprehensive US stock analysis including fundamental analysis (financial metrics, business
     quality, valuation), technical analysis (indicators, chart patterns, support/resistance), stock comparisons,
     and investment report generation.
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: event-driven
+  difficulty: intermediate
   integrations:
   - id: user_input
     type: local_file
@@ -923,8 +926,8 @@ skills:
   summary: Screen US stocks for high-quality dividend opportunities combining value characteristics (P/E
     ratio under 20, P/B ratio under 2), attractive yields (3% or higher), and consistent growth (dividend/revenue/EPS
     trending up over 3 years).
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: weekly
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
@@ -944,8 +947,8 @@ skills:
   category: swing-opportunity
   status: production
   summary: Screen S&P 500 stocks for Mark Minervini's Volatility Contraction Pattern (VCP).
-  timeframe: unknown
-  difficulty: unknown
+  timeframe: daily
+  difficulty: intermediate
   integrations:
   - id: fmp
     type: market_data
