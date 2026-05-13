@@ -69,6 +69,37 @@ repos:
         files: '^(skills-index\.yaml|skills/[^/]+/SKILL\.md|workflows/.*\.yaml|scripts/validate_skills_index\.py|scripts/tests/test_validate_skills_index\.py|docs/dev/metadata-and-workflow-schema\.md)$'
         pass_filenames: false
 
+      - id: workflow-docs-drift
+        name: Workflow docs drift check (regenerate from workflows/*.yaml)
+        entry: python3 scripts/generate_workflow_docs.py --check
+        language: system
+        # Fire on any input that affects rendered output: manifests, generator,
+        # and the rendered docs themselves (so manual edits are caught).
+        files: '^(workflows/.*\.yaml|scripts/generate_workflow_docs\.py|docs/(en|ja)/workflows\.md)$'
+        pass_filenames: false
+
+      - id: catalog-drift
+        name: README + CLAUDE.md catalog drift check (regenerate from skills-index.yaml)
+        entry: python3 scripts/generate_catalog_from_index.py --check
+        language: system
+        # Fire on any input that affects rendered output: index, generator,
+        # and the target files themselves (catches manual edits between
+        # sentinel markers).
+        files: '^(skills-index\.yaml|scripts/generate_catalog_from_index\.py|README\.md|README\.ja\.md|CLAUDE\.md)$'
+        pass_filenames: false
+
+      # Pre-push hook: run validator in --strict-workflows + --strict-metadata
+      # mode. Pre-commit stays in default mode so quick edits aren't blocked,
+      # but pushes must satisfy the stricter contract (workflow internal
+      # consistency + populated metadata fields).
+      - id: validate-skills-index-strict
+        name: Validate skills-index.yaml + workflows + metadata (strict)
+        entry: python3 scripts/validate_skills_index.py --strict-workflows --strict-metadata
+        language: system
+        stages: [pre-push]
+        pass_filenames: false
+        always_run: true
+
       # Pre-push hook: run all skill-level tests before pushing
       # Tests run per-skill to avoid module name collisions (scorer.py, helpers.py, etc.)
       - id: pytest-pre-push

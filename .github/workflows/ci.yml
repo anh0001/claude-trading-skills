@@ -198,6 +198,54 @@ jobs:
           path: htmlcov/
           retention-days: 7
 
+  metadata:
+    name: Metadata + Workflow checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install minimal deps
+        run: pip install pyyaml
+
+      # 1. Validate skills-index.yaml structure + bijection with skills/.
+      # Default mode is what pre-commit runs on each commit.
+      - name: Validate skills-index (default)
+        run: python3 scripts/validate_skills_index.py
+
+      # 2. Strict workflow validation — workflow files exist, schema rules
+      # pass (artifact parity, required_skills coverage, decision-gate
+      # questions, no deprecated skills in required_skills, etc.).
+      # This is what pre-push enforces locally.
+      - name: Validate skills-index (--strict-workflows)
+        run: python3 scripts/validate_skills_index.py --strict-workflows
+
+      # 2b. Strict metadata validation — every skill has populated
+      # timeframe / difficulty / inputs / outputs (no `unknown` markers,
+      # no empty lists). Now safe to enforce because the corresponding
+      # fill-in PR populated these fields for all 54 skills.
+      - name: Validate skills-index (--strict-metadata)
+        run: python3 scripts/validate_skills_index.py --strict-metadata
+
+      # 3. Drift check: docs/{en,ja}/workflows.md must match what the
+      # generator would produce from workflows/*.yaml. Catches manual edits
+      # to the docs and stale docs after manifest changes.
+      - name: Workflow docs drift check
+        run: python3 scripts/generate_workflow_docs.py --check
+
+      # 4. README catalog drift check: the catalog sections in README.md and
+      # README.ja.md (between skills-index sentinel markers) must match what
+      # the generator would produce from skills-index.yaml.
+      - name: README catalog drift check
+        run: python3 scripts/generate_catalog_from_index.py --check
+
+      # Note: the validator + generator unit tests already run under the
+      # 'Test repo-level scripts' step in the test job above.
+
   security:
     name: Security
     runs-on: ubuntu-latest
