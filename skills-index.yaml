@@ -23,7 +23,9 @@ skills:
     note: User provides strategy parameters
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - trade-memory-loop
+  - monthly-performance-review
   hand_written_doc: false
 - id: breadth-chart-analyst
   display_name: Breadth Chart Analyst
@@ -58,7 +60,8 @@ skills:
     note: Consumes VCP screener output; pure calculation + Alpaca order templates
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - swing-opportunity-daily
   hand_written_doc: false
 - id: canslim-screener
   display_name: CANSLIM Screener
@@ -74,7 +77,8 @@ skills:
     note: US stock fundamentals via FMP
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - swing-opportunity-daily
   hand_written_doc: false
 - id: data-quality-checker
   display_name: Data Quality Checker
@@ -145,7 +149,8 @@ skills:
     note: Deterministic scoring + optional LLM review
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - monthly-performance-review
   hand_written_doc: false
 - id: earnings-calendar
   display_name: Earnings Calendar
@@ -332,7 +337,8 @@ skills:
     note: Synthesizes signals from other skills; pure calculation
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - market-regime-daily
   hand_written_doc: false
 - id: finviz-screener
   display_name: Finviz Screener
@@ -417,7 +423,8 @@ skills:
     note: Dividend / price monitoring via FMP
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - core-portfolio-weekly
   hand_written_doc: false
 - id: kanchi-dividend-sop
   display_name: Kanchi Dividend SOP
@@ -449,7 +456,8 @@ skills:
     note: US tax workflow guidance; pure calculation
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - core-portfolio-weekly
   hand_written_doc: false
 - id: macro-regime-detector
   display_name: Macro Regime Detector
@@ -465,7 +473,8 @@ skills:
     note: Cross-asset ratio data via yfinance or local CSV
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - market-regime-daily
   hand_written_doc: false
 - id: market-breadth-analyzer
   display_name: Market Breadth Analyzer
@@ -481,7 +490,8 @@ skills:
     note: TraderMonty public CSV; no API key required
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - market-regime-daily
   hand_written_doc: false
 - id: market-environment-analysis
   display_name: Market Environment Analysis
@@ -535,7 +545,8 @@ skills:
     note: Public market data CSVs; no API key required
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - market-regime-daily
   hand_written_doc: false
 - id: options-strategy-advisor
   display_name: Options Strategy Advisor
@@ -622,7 +633,8 @@ skills:
     note: Alpaca brokerage MCP/API
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - core-portfolio-weekly
   hand_written_doc: false
 - id: position-sizer
   display_name: Position Sizer
@@ -638,7 +650,8 @@ skills:
     note: Pure calculation; works offline
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - swing-opportunity-daily
   hand_written_doc: false
 - id: scenario-analyzer
   display_name: Scenario Analyzer
@@ -686,7 +699,9 @@ skills:
     note: Postmortem framework; pure calculation
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - trade-memory-loop
+  - monthly-performance-review
   hand_written_doc: false
 - id: skill-designer
   display_name: Skill Designer
@@ -787,7 +802,8 @@ skills:
     note: Chart screenshot input
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - swing-opportunity-daily
   hand_written_doc: false
 - id: theme-detector
   display_name: Theme Detector
@@ -807,7 +823,8 @@ skills:
     note: FINVIZ Elite API
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - swing-opportunity-daily
   hand_written_doc: false
 - id: trade-hypothesis-ideator
   display_name: Trade Hypothesis Ideator
@@ -840,7 +857,11 @@ skills:
     note: Financial Modeling Prep API
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - core-portfolio-weekly
+  - swing-opportunity-daily
+  - trade-memory-loop
+  - monthly-performance-review
   hand_written_doc: false
 - id: uptrend-analyzer
   display_name: Uptrend Analyzer
@@ -857,7 +878,8 @@ skills:
     note: Monty Uptrend Ratio Dashboard CSV; no API key required
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - market-regime-daily
   hand_written_doc: false
 - id: us-market-bubble-detector
   display_name: US Market Bubble Detector
@@ -914,7 +936,8 @@ skills:
     note: FINVIZ Elite API
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - core-portfolio-weekly
   hand_written_doc: false
 - id: vcp-screener
   display_name: VCP Screener
@@ -930,5 +953,6 @@ skills:
     note: S&P 500 OHLCV via FMP
   inputs: []
   outputs: []
-  workflows: []
+  workflows:
+  - swing-opportunity-daily
   hand_written_doc: false

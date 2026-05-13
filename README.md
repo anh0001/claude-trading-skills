@@ -38,36 +38,40 @@ It is not designed for fully automated trading, signal outsourcing, or short-ter
 
 ## Recommended Starting Path
 
-If you are new to this repository, start with the Core + Satellite workflow:
+New users should start with one of these operational workflows. Each link points to a machine-readable manifest under [`workflows/`](workflows/) that names the exact skills, decision gates, and artifacts in order.
 
-1. **Core Portfolio Weekly**
-   - Review long-term holdings, dividend stocks, ETFs, and portfolio concentration.
-2. **Market Regime Daily**
-   - Check whether current market conditions allow new risk.
-3. **Swing Opportunity Daily**
-   - Look for swing trade candidates only when market conditions are favorable.
-4. **Trade Memory Loop**
-   - Record the thesis, entry plan, result, and lessons learned.
-5. **Monthly Performance Review**
-   - Review what worked, what failed, and which rules should change.
+| Goal | Workflow | Anchor Skills | API Profile |
+| --- | --- | --- | --- |
+| 15-minute daily market check | [`market-regime-daily`](workflows/market-regime-daily.yaml) | market-breadth-analyzer, uptrend-analyzer, exposure-coach | No API for basic path |
+| Weekly long-term portfolio review | [`core-portfolio-weekly`](workflows/core-portfolio-weekly.yaml) | portfolio-manager, kanchi-dividend-review-monitor, trader-memory-core | Alpaca optional/required by input |
+| Find swing candidates only when risk is allowed | [`swing-opportunity-daily`](workflows/swing-opportunity-daily.yaml) | vcp-screener, technical-analyst, position-sizer | FMP for screeners |
+| Record and learn from every closed trade | [`trade-memory-loop`](workflows/trade-memory-loop.yaml) | trader-memory-core, signal-postmortem | No API for manual path |
+| Review monthly performance and adjust rules | [`monthly-performance-review`](workflows/monthly-performance-review.yaml) | trader-memory-core, signal-postmortem, backtest-expert | No API for manual path |
 
-## Choose Your Starting Point
+See [`workflows/README.md`](workflows/README.md) for how to read a manifest and run it manually.
 
-| Goal | Start Here |
-| --- | --- |
-| I want a 15-minute daily market check | Market Regime Daily |
-| I want to review my long-term portfolio | Core Portfolio Weekly |
-| I want to find swing candidates | Swing Opportunity Daily |
-| I want to improve my trading process | Trade Memory Loop |
-| I want to research new strategies | Strategy Research |
+### No API Key Starter Path
+
+If you do not have FMP / FINVIZ / Alpaca subscriptions, start with these five skills and run them manually:
+
+1. `market-breadth-analyzer` — public CSV breadth scoring; no API key
+2. `uptrend-analyzer` — public CSV uptrend participation; no API key
+3. `position-sizer` — pure calculation; no I/O
+4. `trader-memory-core` — local YAML journaling
+5. `signal-postmortem` — review framework
+
+This path lets you review market conditions, size trades, journal decisions, and review outcomes **without paid data APIs**. Note: "no API" does not mean "no external data" — these skills still need public CSVs, chart screenshots, or local files. See each skill's `integrations:` entry in [`skills-index.yaml`](skills-index.yaml) for exact input requirements.
+
+> **Canonical source:** [`skills-index.yaml`](skills-index.yaml) is the authoritative index of all skills. If this README, `CLAUDE.md`, or docs disagree with the index, the index is correct. The same applies to multi-skill workflows — [`workflows/*.yaml`](workflows/) is canonical.
 
 ## Repository Layout
 - `skills/<skill-name>/` – Source folder for each trading skill. Contains `SKILL.md`, reference material, and any helper scripts.
+- `skills-index.yaml` – Canonical metadata index for every skill (id, category, integrations, workflows back-references).
+- `workflows/` – Operational workflow manifests for the Core + Satellite routines (canonical, validator-enforced via `--strict-workflows`).
 - `skill-packages/` – Pre-built `.skill` archives ready to upload to Claude's web app **Skills** tab.
-- `docs/` – Documentation site content and generated skill pages.
-- `scripts/` – Repository-level automation and maintenance scripts.
-- `skillsets/` – Planned skillset manifests for bundled workflows.
-- `workflows/` – Planned workflow manifests for operational routines.
+- `docs/` – Documentation site content, generated skill pages, and `docs/dev/metadata-and-workflow-schema.md` (schema spec).
+- `scripts/` – Repository-level automation, including the schema validator and one-shot bootstrap helper.
+- `skillsets/` – Planned skillset manifests for bundled workflows (vision Phase 2, not yet present).
 
 ## Getting Started
 ### Use with Claude Web App

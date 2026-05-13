@@ -697,7 +697,21 @@ These skills fetch future events via FMP API:
 
 ## Multi-Skill Workflows
 
-Skills are designed to be combined for comprehensive analysis:
+> **Canonical source:** `workflows/*.yaml` is the authoritative definition of multi-skill workflows for the Core + Satellite primary user. The prose examples below are quickstart sketches only — if any block here disagrees with a manifest in `workflows/`, the YAML is correct. See [`workflows/README.md`](workflows/README.md) for the manifest schema and `docs/dev/metadata-and-workflow-schema.md` for the full validator rules.
+
+### Canonical workflows (PR2)
+
+| Workflow | Cadence | Required skills |
+|---|---|---|
+| [`market-regime-daily`](workflows/market-regime-daily.yaml) | daily | market-breadth-analyzer, uptrend-analyzer, exposure-coach |
+| [`core-portfolio-weekly`](workflows/core-portfolio-weekly.yaml) | weekly | portfolio-manager, trader-memory-core |
+| [`swing-opportunity-daily`](workflows/swing-opportunity-daily.yaml) | daily | vcp-screener, technical-analyst, position-sizer, trader-memory-core |
+| [`trade-memory-loop`](workflows/trade-memory-loop.yaml) | per closed trade | trader-memory-core, signal-postmortem |
+| [`monthly-performance-review`](workflows/monthly-performance-review.yaml) | monthly | trader-memory-core, signal-postmortem |
+
+### Quickstart prose examples (NOT canonical)
+
+The blocks below are informal sketches kept for skills not yet covered by a YAML manifest. They are quickstart help, not contracts. When in doubt, defer to the YAML manifests above.
 
 **Daily Market Monitoring:**
 1. Economic Calendar Fetcher → Check today's events
@@ -728,6 +742,7 @@ Skills are designed to be combined for comprehensive analysis:
 2. Review asset allocation and risk metrics
 3. Market Environment Analysis → Assess macro conditions
 4. Execute rebalancing plan with buy/sell actions
+> The canonical version of this routine is [`core-portfolio-weekly.yaml`](workflows/core-portfolio-weekly.yaml).
 
 **Earnings Momentum Trading:**
 1. Earnings Trade Analyzer → Score recent earnings reactions (5-factor: gap, trend, volume, MA200, MA50)

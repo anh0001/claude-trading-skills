@@ -38,36 +38,40 @@ English README is available at [`README.md`](README.md).
 
 ## おすすめの始め方
 
-初めて使う場合は、Core + Satellite の基本導線から始めるのがおすすめです。
+初めて使う場合は、以下のいずれかの運用ワークフローから始めてください。各リンクは [`workflows/`](workflows/) 以下の機械可読 manifest を指していて、使うスキル・判断ゲート・artifact の流れを順番通りに記述しています。
 
-1. **Core Portfolio Weekly**
-   - 長期保有、配当株、ETF、集中リスクを週次で確認する。
-2. **Market Regime Daily**
-   - 今日、新規リスクを取ってよい相場かを確認する。
-3. **Swing Opportunity Daily**
-   - 相場環境が良いときだけ、スイング候補を探す。
-4. **Trade Memory Loop**
-   - トレード仮説、エントリー理由、結果、学びを記録する。
-5. **Monthly Performance Review**
-   - 機能したルール、失敗したルール、改善点を月次で確認する。
+| 目的 | ワークフロー | 主要スキル | API プロファイル |
+| --- | --- | --- | --- |
+| 毎朝15分で相場を確認したい | [`market-regime-daily`](workflows/market-regime-daily.yaml) | market-breadth-analyzer, uptrend-analyzer, exposure-coach | API なし可 |
+| 長期ポートフォリオを週次で見直したい | [`core-portfolio-weekly`](workflows/core-portfolio-weekly.yaml) | portfolio-manager, kanchi-dividend-review-monitor, trader-memory-core | Alpaca（または手動 CSV） |
+| 相場環境が許すときだけスイング候補を探す | [`swing-opportunity-daily`](workflows/swing-opportunity-daily.yaml) | vcp-screener, technical-analyst, position-sizer | FMP 必須 |
+| 約定後にトレードを記録して学ぶ | [`trade-memory-loop`](workflows/trade-memory-loop.yaml) | trader-memory-core, signal-postmortem | API なし可 |
+| 月次でパフォーマンスとルールを見直す | [`monthly-performance-review`](workflows/monthly-performance-review.yaml) | trader-memory-core, signal-postmortem, backtest-expert | API なし可 |
 
-## 目的別の始め方
+manifest の読み方や手動実行手順は [`workflows/README.md`](workflows/README.md) を参照してください。
 
-| 目的 | 最初に見る導線 |
-| --- | --- |
-| 毎朝15分で相場を確認したい | Market Regime Daily |
-| 長期ポートフォリオを見直したい | Core Portfolio Weekly |
-| スイング候補を探したい | Swing Opportunity Daily |
-| トレード記録から改善したい | Trade Memory Loop |
-| 新しい戦略を研究したい | Strategy Research |
+### API キー不要の入口
+
+FMP / FINVIZ / Alpaca の有料サブスクをまだ持っていない場合は、まずこの5つのスキルを手動で回してください。
+
+1. `market-breadth-analyzer` — 公開 CSV による breadth スコア、API キー不要
+2. `uptrend-analyzer` — 公開 CSV の uptrend 比率、API キー不要
+3. `position-sizer` — 純粋計算、I/O なし
+4. `trader-memory-core` — ローカル YAML での journaling
+5. `signal-postmortem` — レビューフレームワーク
+
+この導線だけで「相場確認 → ポジションサイズ → トレード記録 → レビュー」の最小ループが**有料データ API なし**で回せます。ただし「API なし」は「外部データなし」ではなく、公開 CSV・チャート画像・ローカルファイルは依然として必要です。各スキルの正確な入力要件は [`skills-index.yaml`](skills-index.yaml) の `integrations:` 欄を参照してください。
+
+> **正本（canonical source）:** [`skills-index.yaml`](skills-index.yaml) が全スキルメタデータの正本です。本 README・`CLAUDE.md`・docs 側との内容差があった場合は index 側が正です。マルチスキル導線についても同様で、[`workflows/*.yaml`](workflows/) が正本です。
 
 ## リポジトリ構成
 - `skills/<skill-name>/` – 各スキルのソースフォルダ。`SKILL.md`、参照資料、補助スクリプトが含まれます。
+- `skills-index.yaml` – 全スキルのメタデータ正本（id・カテゴリ・integrations・workflows 参照）。
+- `workflows/` – Core + Satellite 運用ワークフローの manifest 群（正本、`--strict-workflows` で validator 検証済み）。
 - `skill-packages/` – Claudeウェブアプリの**Skills**タブへそのままアップロードできる`.skill`パッケージ置き場。
-- `docs/` – ドキュメントサイトのコンテンツと生成済みスキルページ。
-- `scripts/` – リポジトリ全体の自動化・保守スクリプト。
-- `skillsets/` – 追加予定の目的別スキルセット manifest。
-- `workflows/` – 追加予定の実運用 workflow manifest。
+- `docs/` – ドキュメントサイトのコンテンツ、生成済みスキルページ、`docs/dev/metadata-and-workflow-schema.md`（スキーマ仕様書）。
+- `scripts/` – リポジトリ全体の自動化・保守スクリプト。validator や bootstrap helper を含む。
+- `skillsets/` – 追加予定の目的別スキルセット manifest（vision Phase 2、未作成）。
 
 ## はじめに
 ### Claudeウェブアプリで使う場合
