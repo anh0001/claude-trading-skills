@@ -18,8 +18,11 @@ env/
 # Tool configurations
 .idea/
 .vscode/
+.env
+.env.local
 .envrc
 .mcp.json
+.claude/settings.local.json
 
 # Logs & temp
 logs/
